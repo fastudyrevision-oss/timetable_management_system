@@ -1,0 +1,14 @@
+So , here we have to make a room arrangement and timetable managment system , 
+for a unniversity , for now it should be a MVP fro a single department , department of Information technology , 
+The CR and GR will have login issued from admin , 
+and then they can accees there specific batch ,
+Each class have multiple sections , self supprt and regular , 
+and there multiple semesters , 1 ,2 ,3 4,5 ,67, 8 , 
+and mostly the timetable comes in the pdf form so we have to extract it and present it in a manageable form , and it can be edited , managed , the class rooms and teachers for each class and subject should be manageable , 
+
+The main problem where this app should be focused is that , when timetable comes , some classes has to be rearranged in different time due to the unavailability of rooms , teachers and students , the each classs card should the aviable timing , for which it can be arranged , and if the class room is arranged for a class then it should show details , that is has been arraged , so oevrall it is an room arrangement and managment system for classes , Manageable, editable , 
+the tech stack we should  use  is must be php , based or html , css and js , 
+and datbase should be flexible , editable and can use json schema with exporatation
+
+this one is the implementation plan that should be built with the agent , 
+so you have to mke this an proper implementationplan and promppt

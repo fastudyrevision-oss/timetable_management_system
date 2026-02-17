@@ -1,0 +1,63 @@
+/* public/assets/css/timetable.css */
+.timetable-grid {
+    display: grid;
+    grid-template-columns: 100px repeat(5, 1fr);
+    /* Time + 5 Days */
+    gap: 10px;
+    min-width: 800px;
+}
+
+.timetable-header {
+    font-weight: bold;
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.timetable-slot {
+    min-height: 120px;
+    border: 1px solid #dee2e6;
+    padding: 5px;
+    position: relative;
+    background-color: #fff;
+    transition: background-color 0.2s;
+}
+
+.timetable-slot:hover {
+    background-color: #f1f3f5;
+}
+
+.class-card {
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 4px;
+    padding: 5px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-bottom: 5px;
+}
+
+.class-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.class-card.conflict {
+    background-color: #ffcdd2;
+    border-color: #ef9a9a;
+}
+
+.class-card.pending {
+    background-color: #fff9c4;
+    border-color: #fff59d;
+}
+
+.hover-opacity-100:hover {
+    opacity: 1 !important;
+}
+
+.opacity-0 {
+    opacity: 0;
+}

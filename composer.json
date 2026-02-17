@@ -1,0 +1,12 @@
+{
+    "name": "timetable/system",
+    "description": "Room Arrangement & Timetable Management System",
+    "require": {
+        "smalot/pdfparser": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
