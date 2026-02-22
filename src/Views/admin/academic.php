@@ -30,8 +30,11 @@ require '../src/Views/layouts/header.php';
                 </form>
                 <ul class="list-group">
                     <?php foreach ($batches as $batch): ?>
-                        <li class="list-group-item">
-                            <?= htmlspecialchars($batch['name']) ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><?= htmlspecialchars($batch['name']) ?></span>
+                            <form action="/admin/academic/batch/delete/<?= $batch['id'] ?>" method="POST" onsubmit="return confirm('WARNING: deleting this Batch will also delete ALL Sections, Semesters, Subjects, and Timetable entries associated with it. This cannot be undone. Are you sure?');" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -126,7 +129,12 @@ require '../src/Views/layouts/header.php';
     <!-- Subjects -->
     <div class="col-md-6 mb-4">
         <div class="card">
-            <div class="card-header">Subjects</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Subjects</span>
+                <form action="/admin/academic/subject/merge" method="POST" onsubmit="return confirm('Are you sure? This will merge subjects with identical Code (ignoring Name).');">
+                    <button type="submit" class="btn btn-sm btn-warning">Merge by Code</button>
+                </form>
+            </div>
             <div class="card-body">
                 <form action="/admin/academic/create-subject" method="POST" class="mb-3">
                     <div class="row g-2">
@@ -154,12 +162,12 @@ require '../src/Views/layouts/header.php';
                 </form>
                 <ul class="list-group">
                     <?php foreach ($subjects as $sub): ?>
-                        <li class="list-group-item">
-                            [
-                            <?= htmlspecialchars($sub['batch_name']) ?> S
-                            <?= $sub['sem_number'] ?>]
-                            <?= htmlspecialchars($sub['code']) ?> -
-                            <?= htmlspecialchars($sub['name']) ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                [<?= htmlspecialchars($sub['batch_name']) ?> S<?= $sub['sem_number'] ?>]
+                                <?= htmlspecialchars($sub['code']) ?> - <?= htmlspecialchars($sub['name']) ?>
+                            </span>
+                            <a href="/admin/academic/subject/edit/<?= $sub['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
                         </li>
                     <?php endforeach; ?>
                 </ul>

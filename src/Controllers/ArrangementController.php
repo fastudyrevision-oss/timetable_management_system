@@ -39,12 +39,16 @@ class ArrangementController
 
         $availableRooms = $this->engine->getAvailableRooms($slot['day'], $s_start, $s_end);
         $availableTeachers = $this->engine->getAvailableTeachers($slot['day'], $slot['time_slot']);
+        
+        // Fetch All Subjects
+        $stmtSub = $this->pdo->query("SELECT * FROM subjects ORDER BY name");
+        $subjects = $stmtSub->fetchAll();
 
         // Include current room/teacher in specific lists so they can be kept
         // (This logic can be improved but for MVP we just list free ones)
 
-        // Render edit modal/view (For MVP, a separate page)
-        require '../src/Views/admin/edit_slot.php';
+        // Render edit modal/view
+        require '../src/Views/admin/arrangement/edit.php';
     }
 
     public function updateSlot()
@@ -52,16 +56,30 @@ class ArrangementController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
             $day = $_POST['day'];
-            $time_slot = $_POST['time_slot'];
             $room_id = !empty($_POST['room_id']) ? $_POST['room_id'] : null;
             $teacher_id = !empty($_POST['teacher_id']) ? $_POST['teacher_id'] : null;
-            $batch_id = $_POST['batch_id']; // Hidden field usually
+            $subject_id = $_POST['subject_id'];
             
-            $times = $this->parseTimeSlot($time_slot);
+            // Handle Time
+            $s_start = $_POST['start_time'] ?? null;
+            $s_end = $_POST['end_time'] ?? null;
+            
+            if ($s_start && $s_end) {
+                // Ensure proper format for DB (H:i:s)
+                $s_start = date("H:i:s", strtotime($s_start));
+                $s_end = date("H:i:s", strtotime($s_end));
+                
+                // Reconstruct display string
+                $time_slot = substr($s_start, 0, 5) . ' - ' . substr($s_end, 0, 5);
+            } else {
+                 // Fallback to existing or error?
+                 // Let's assume critical failure if no time
+                 die("Start and End time required");
+            }
 
             // Allow update
-            $stmt = $this->pdo->prepare("UPDATE timetable SET day=?, time_slot=?, start_time=?, end_time=?, room_id=?, teacher_id=?, status='scheduled' WHERE id=?");
-            $stmt->execute([$day, $time_slot, $times[0], $times[1], $room_id, $teacher_id, $id]);
+            $stmt = $this->pdo->prepare("UPDATE timetable SET day=?, time_slot=?, start_time=?, end_time=?, room_id=?, teacher_id=?, subject_id=?, status='scheduled' WHERE id=?");
+            $stmt->execute([$day, $time_slot, $s_start, $s_end, $room_id, $teacher_id, $subject_id, $id]);
 
             $_SESSION['flash_message'] = "Slot updated successfully.";
             header('Location: /admin/timetable');

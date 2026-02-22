@@ -16,49 +16,22 @@ data = []
 # Regex patterns
 patterns = {
     'time': r'\(\s*(\d{1,2}:\d{2}\s*(?:-|to)\s*\d{1,2}:\d{2})\s*\)',
-    'code': r'#([A-Z0-9\-]+)',
-    'section': r'(Regular|Self Support\s*\d*)',
-    'semester': r'Semester\s*[#]?\s*(\d+|…|\.{3})', # Matches "Semester#2" or "Semester..."
+    # Allow optional # prefix, standard course code format like CSC-101 or CSC101
+    'code': r'(?:#)?([A-Z]{2,4}[- ]?\d{3,4})', 
+    'section': r'(Regular|Self Support\s*\d*|Section\s*[A-Z])',
+    'semester': r'Semester\s*[#]?\s*(\d+|…|\.{3})', 
     'room_header': r'(ROOM|LAB|CR)[\s-]*(\d+)',
 }
 
 days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-def parse_blocks(cell_text, day, room):
-    """
-    Parses a cell that may contain multiple class blocks.
-    Splits by the time pattern (Time - Time).
-    """
-    if not cell_text or not cell_text.strip():
-        return []
+def parse_single_block(text, day, room, time_slot):
+    if not text:
+        return None
 
-    # Clean multiple spaces/newlines
-    text = re.sub(r'\s+', ' ', cell_text.strip())
-    
-    # Split by time pattern, capturing the time
-    parts = re.split(patterns['time'], text)
-    
-    parsed_items = []
-    
-    # Iterate in pairs: Text + Time
-    num_parts = len(parts)
-    
-    for i in range(0, num_parts - 1, 2):
-        block_text = parts[i].strip()
-        time_slot = parts[i+1].strip()
-        
-        if not block_text:
-            continue
+    # Clean text - Remove "was: ..." notes which are common in Ramadan/Revised schedules
+    text = re.sub(r'was:\s*\d{1,2}:\d{2}\s*(-|to)\s*\d{1,2}:\d{2}', '', text, flags=re.IGNORECASE).strip()
 
-        item = parse_single_block(block_text, time_slot, day, room)
-        if item:
-            parsed_items.append(item)
-
-    return parsed_items
-
-def parse_single_block(text, time_slot, day, room):
-    # Extract details from the text block
-    
     # 1. Subject Code
     subject_code = None
     code_match = re.search(patterns['code'], text)
@@ -68,64 +41,94 @@ def parse_single_block(text, time_slot, day, room):
     # 2. Subject Name
     subject_name = "Unknown"
     if code_match:
-        subject_name = text[:code_match.start()].strip()
+        # Everything before the code
+        raw_subject = text[:code_match.start()].strip()
+        # Remove common noise like leading numbers or "Combined ()"
+        raw_subject = re.sub(r'Combined\s*\(\s*\)', '', raw_subject, flags=re.IGNORECASE)
+        subject_name = re.sub(r'^\d+\s*', '', raw_subject).strip()
     else:
-        subject_name = text.split('#')[0].strip()
+        # Fallback: everything before the first newline or parenthesis
+        subject_name = re.split(r'[\(\n]', text)[0].strip()
 
     # 3. Section
     section = None
     sec_match = re.search(patterns['section'], text, re.IGNORECASE)
     if sec_match:
-        section = sec_match.group(1)
+        section = sec_match.group(1).strip()
 
     # 4. Semester
-    semester = "0" # Default to string "0"
-    sem_match = re.search(patterns['semester'], text, re.IGNORECASE)
-    if sem_match:
-        raw_sem = sem_match.group(1)
-        if raw_sem.isdigit():
-            semester = raw_sem
-        else:
-            semester = "0"
+    semester = "0" 
+    # Try to find "(Xth Semester Intake)" or "Semester X"
+    sem_intake_match = re.search(r'(\d+)(?:st|nd|rd|th)\s*Semester\s*Intake', text, re.IGNORECASE)
+    if sem_intake_match:
+        semester = sem_intake_match.group(1)
+    else:
+        sem_match = re.search(patterns['semester'], text, re.IGNORECASE)
+        if sem_match:
+            raw_sem = sem_match.group(1)
+            if raw_sem.isdigit():
+                semester = raw_sem
 
-    # 5. Teacher
+    # 5. Teacher (Improved)
     teacher = "TBA"
-    last_end = 0
-    if sem_match:
-        last_end = max(last_end, sem_match.end())
-    elif sec_match:
-        last_end = max(last_end, sec_match.end())
     
-    session_match = re.search(r'\(\s*\d{4}\s*-\s*\d{4}\s*\)', text)
-    if session_match:
-        last_end = max(last_end, session_match.end())
-
-    if last_end < len(text):
-        potential_teacher = text[last_end:].strip()
-        potential_teacher = re.sub(r'^[\s,\.]+', '', potential_teacher)
-        if len(potential_teacher) > 2:
-            teacher = potential_teacher
-
-    # Batch
+    # Batch detection (Improved)
     batch = None
-    if code_match and sec_match:
-        start = code_match.end()
-        end = sec_match.start()
-        if end > start:
-            batch = text[start:end].strip()
+    # Look for "BS in [Anything]" or "MSc [Anything]" etc.
+    batch_pattern = r'(BS|MSc|MS|BE|BBA|AD)\s+(?:in\s+)?([\w\s]+?)(?=\s+(?:Regular|Self Support|Section|\()|$)'
+    batch_match = re.search(batch_pattern, text, re.IGNORECASE)
+    if batch_match:
+        batch = f"{batch_match.group(1)} {batch_match.group(2)}".strip()
     
+    # Text after all known entities to find teacher
+    last_end = 0
+    if code_match: last_end = max(last_end, code_match.end())
+    
+    # Usually teacher is at the very end before the time slot (which is already removed from text in parse_blocks)
+    # Let's try to split by newline and take the last meaningful line that isn't the batch/semester info
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    if lines:
+        for line in reversed(lines):
+            # Teacher usually doesn't have "Semester" or "Intake" or "Section" or the subject code
+            if not any(word in line for word in ["Semester", "Intake", "Regular", "Support", "202"]) and not re.search(patterns['code'], line):
+                teacher = line
+                break
+
     return {
         "day": day,
         "room": room,
-        "subject": subject_name,
-        "subject_code": subject_code,
+        "subject": subject_name if len(subject_name) > 2 else "Subject",
+        "subject_code": subject_code if subject_code else "TBA",
         "teacher": teacher,
-        "semester": semester, # Always numeric string "0", "1", etc.
+        "semester": semester,
         "section": section,
         "batch": batch,
         "time_slot": time_slot,
         "raw_text": f"{text} ({time_slot})"
     }
+
+def parse_blocks(cell_text, day, room):
+    if not cell_text or not cell_text.strip():
+        return []
+
+    # Find all time slots
+    time_matches = list(re.finditer(patterns['time'], cell_text))
+    if not time_matches:
+        return []
+
+    blocks = []
+    for i in range(len(time_matches)):
+        start_idx = time_matches[i].start()
+        end_idx = time_matches[i+1].start() if i + 1 < len(time_matches) else len(cell_text)
+        
+        time_slot = time_matches[i].group(1)
+        content_text = cell_text[time_matches[i].end():end_idx].strip()
+        
+        item = parse_single_block(content_text, day, room, time_slot)
+        if item:
+            blocks.append(item)
+    
+    return blocks
 
 try:
     with pdfplumber.open(pdf_path) as pdf:

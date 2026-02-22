@@ -10,8 +10,14 @@
     <title>Timetable</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         body { background-color: #f4f6f9; }
+        /* Select2 Bootstrap 5 Theme Fixes (optional, but good for consistency) */
+        .select2-container .select2-selection--single { height: 31px !important; } 
+        .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 31px !important; }
+        
         .grid-container { overflow-x: auto; }
         .grid-table th, .grid-table td { vertical-align: top; min-width: 200px; }
         .class-card {
@@ -65,7 +71,7 @@
 
                         <!-- Dropdowns -->
                         <div class="col-auto">
-                             <select name="semester_id" class="form-select form-select-sm">
+                             <select name="semester_id" class="form-select form-select-sm select2">
                                  <option value="">All Semesters</option>
                                  <?php foreach($semesters as $sem): ?>
                                     <option value="<?= $sem['id'] ?>" <?= (isset($_GET['semester_id']) && $_GET['semester_id'] == $sem['id']) ? 'selected' : '' ?>>
@@ -76,7 +82,7 @@
                         </div>
 
                         <div class="col-auto">
-                             <select name="batch_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                             <select name="batch_id" class="form-select form-select-sm select2" onchange="this.form.submit()">
                                  <option value="">All Batches</option>
                                  <?php foreach($batches as $b): ?>
                                     <option value="<?= $b['id'] ?>" <?= (isset($_GET['batch_id']) && $_GET['batch_id'] == $b['id']) ? 'selected' : '' ?>>
@@ -87,7 +93,7 @@
                         </div>
 
                         <div class="col-auto">
-                             <select name="section_id" class="form-select form-select-sm">
+                             <select name="section_id" class="form-select form-select-sm select2">
                                  <option value="">All Sections</option>
                                  <?php foreach($sections as $s): ?>
                                     <?php if(empty($_GET['batch_id']) || $_GET['batch_id'] == $s['batch_id']): ?>
@@ -167,6 +173,15 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%' 
+        });
+    });
+</script>
 </body>
 </html>

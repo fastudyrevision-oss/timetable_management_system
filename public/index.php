@@ -110,6 +110,18 @@ switch ($uri) {
         }
         $teacherController->create();
         break;
+    case (preg_match('/^\/admin\/teachers\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: /login');
+            exit;
+        }
+        $teacherController->edit($matches[1]);
+        break;
+    case '/admin/teachers/update':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $teacherController->update();
+        break;
 
     // Academic Routes (Batches, Sections, Semesters, Subjects)
     case '/admin/academic':
@@ -123,6 +135,11 @@ switch ($uri) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
             exit;
         $academicController->createBatch();
+        break;
+    case (preg_match('/^\/admin\/academic\/batch\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->deleteBatch($matches[1]);
         break;
     case '/admin/academic/create-section':
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
@@ -138,6 +155,21 @@ switch ($uri) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
             exit;
         $academicController->createSubject();
+        break;
+    case (preg_match('/^\/admin\/academic\/subject\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->editSubject($matches[1]);
+        break;
+    case '/admin/academic/subject/update':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->updateSubject();
+        break;
+    case '/admin/academic/subject/merge':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->mergeDuplicateSubjects();
         break;
 
     // Arrangement Routes

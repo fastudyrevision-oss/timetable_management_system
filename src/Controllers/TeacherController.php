@@ -38,4 +38,35 @@ class TeacherController
             exit;
         }
     }
+
+    public function edit($id)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM teachers WHERE id = ?");
+        $stmt->execute([$id]);
+        $teacher = $stmt->fetch();
+
+        if (!$teacher) {
+            die("Teacher not found");
+        }
+
+        require '../src/Views/admin/teachers/edit.php';
+    }
+
+    public function update()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['id'];
+            $name = $_POST['name'];
+            $email = $_POST['email'];
+
+            $stmt = $this->pdo->prepare("UPDATE teachers SET name = ?, email = ? WHERE id = ?");
+            if ($stmt->execute([$name, $email, $id])) {
+                $_SESSION['flash_message'] = "Teacher updated successfully.";
+            } else {
+                $_SESSION['error_message'] = "Failed to update teacher.";
+            }
+            header('Location: /admin/teachers');
+            exit;
+        }
+    }
 }

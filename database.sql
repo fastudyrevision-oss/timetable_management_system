@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS semesters (
 CREATE TABLE IF NOT EXISTS subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    code VARCHAR(20) NULL,
+    code VARCHAR(20) NULL UNIQUE,
     semester_id INT NOT NULL,
     FOREIGN KEY (semester_id) REFERENCES semesters(id) ON DELETE CASCADE
 );

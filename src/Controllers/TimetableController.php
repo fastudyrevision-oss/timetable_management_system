@@ -186,11 +186,27 @@ class TimetableController
             try {
                 $this->pdo->beginTransaction();
 
+                // 1. First, identify all unique groups in the parsed data and clear their existing timetable
+                $affectedGroups = [];
+                foreach ($data as $row) {
+                    $batchName = substr($row['batch'] ?? 'General', 0, 50);
+                    $sectionName = substr($row['section'] ?? 'A', 0, 50);
+                    $batchId = $this->getOrCreate('batches', 'name', $batchName);
+                    $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
+                    $groupKey = "$batchId-$sectionId";
+                    if (!isset($affectedGroups[$groupKey])) {
+                        $affectedGroups[$groupKey] = ['batch_id' => $batchId, 'section_id' => $sectionId];
+                        // Clear existing timetable for this specific Group
+                        $delStmt = $this->pdo->prepare("DELETE FROM timetable WHERE batch_id = ? AND section_id = ?");
+                        $delStmt->execute([$batchId, $sectionId]);
+                    }
+                }
+
+                // 2. Insert new data
                 foreach ($data as $row) {
                     if (empty($row['day']) || empty($row['time_slot']))
                         continue;
 
-                    // Truncate strings to schema limits
                     $subjectName = substr($row['subject'] ?? 'Unknown Subject', 0, 100);
                     $teacherName = substr($row['teacher'] ?? 'TBA', 0, 100);
                     $roomName = substr($row['room'] ?? 'TBA', 0, 50);
@@ -198,64 +214,39 @@ class TimetableController
                     $sectionName = substr($row['section'] ?? 'A', 0, 50);
                     $subjectCode = substr($row['subject_code'] ?? null, 0, 20);
 
-                    // Semester and Batch are coupled
                     $semesterId = $this->getOrCreateSemester($row['semester'] ?? '1', $batchName);
 
-                    $subjectId = $this->getOrCreate('subjects', 'name', $subjectName, [
-                        'code' => $subjectCode,
-                        'semester_id' => $semesterId
-                    ]);
-
-                    $teacherId = $this->getOrCreate('teachers', 'name', $teacherName);
-                    // Room might be empty or TBA
-                    $roomId = null;
-                    if (!empty($roomName) && $roomName !== 'TBA') {
-                        $roomId = $this->getOrCreate('rooms', 'name', $roomName);
+                    // Subject Matching: Code is unique identifier
+                    $subjectId = null;
+                    if (!empty($subjectCode) && $subjectCode !== 'TBA') {
+                        $stmtCode = $this->pdo->prepare("SELECT id FROM subjects WHERE code = ?");
+                        $stmtCode->execute([$subjectCode]);
+                        $subjectId = $stmtCode->fetchColumn();
                     }
 
+                    if (!$subjectId) {
+                        $stmtName = $this->pdo->prepare("SELECT id FROM subjects WHERE name = ?");
+                        $stmtName->execute([$subjectName]);
+                        $subjectId = $stmtName->fetchColumn();
+                        if ($subjectId && !empty($subjectCode) && $subjectCode !== 'TBA') {
+                            $this->pdo->prepare("UPDATE subjects SET code = ? WHERE id = ?")->execute([$subjectCode, $subjectId]);
+                        }
+                    }
+
+                    if (!$subjectId) {
+                        $subjectId = $this->getOrCreate('subjects', 'name', $subjectName, ['code' => $subjectCode, 'semester_id' => $semesterId]);
+                    }
+
+                    $teacherId = $this->getOrCreate('teachers', 'name', $teacherName);
+                    $roomId = (!empty($roomName) && $roomName !== 'TBA') ? $this->getOrCreate('rooms', 'name', $roomName) : null;
                     $batchId = $this->getOrCreate('batches', 'name', $batchName);
                     $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
 
-                    // Check for existing entry for this Section + Day + Time
-                    $checkStmt = $this->pdo->prepare("SELECT id FROM timetable 
-                                                      WHERE batch_id = ? AND section_id = ? AND day = ? AND time_slot = ?");
-                    $checkStmt->execute([$batchId, $sectionId, $row['day'], $row['time_slot']]);
-                    $existingId = $checkStmt->fetchColumn();
-
-                    if ($existingId) {
-                        // Update existing
-                        $stmt = $this->pdo->prepare("UPDATE timetable 
-                            SET semester_id=?, subject_id=?, teacher_id=?, room_id=?, status='scheduled'
-                            WHERE id=?");
-                        $stmt->execute([
-                            $semesterId,
-                            $subjectId,
-                            $teacherId,
-                            $roomId,
-                            $existingId
-                        ]);
-                    } else {
-                        // Insert new
-                        $stmt = $this->pdo->prepare("INSERT INTO timetable 
-                            (batch_id, section_id, semester_id, subject_id, teacher_id, room_id, day, time_slot, start_time, end_time, status)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
-
-                        // Parse time
-                        $times = $this->parseTimeSlot($row['time_slot']);
-
-                        $stmt->execute([
-                            $batchId,
-                            $sectionId,
-                            $semesterId,
-                            $subjectId,
-                            $teacherId,
-                            $roomId,
-                            $row['day'],
-                            $row['time_slot'],
-                            $times[0],
-                            $times[1]
-                        ]);
-                    }
+                    $times = $this->parseTimeSlot($row['time_slot']);
+                    $stmt = $this->pdo->prepare("INSERT INTO timetable 
+                        (batch_id, section_id, semester_id, subject_id, teacher_id, room_id, day, time_slot, start_time, end_time, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
+                    $stmt->execute([$batchId, $sectionId, $semesterId, $subjectId, $teacherId, $roomId, $row['day'], $row['time_slot'], $times[0], $times[1]]);
                     $count++;
                 }
 

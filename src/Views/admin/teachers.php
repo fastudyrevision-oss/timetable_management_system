@@ -39,6 +39,7 @@ require '../src/Views/layouts/header.php';
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -52,6 +53,9 @@ require '../src/Views/layouts/header.php';
                         </td>
                         <td>
                             <?= htmlspecialchars($teacher['email']) ?>
+                        </td>
+                        <td>
+                            <a href="/admin/teachers/edit/<?= $teacher['id'] ?>" class="btn btn-sm btn-primary">Edit</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
