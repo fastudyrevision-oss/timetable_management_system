@@ -13,12 +13,14 @@ class ArrangementEngine
     }
 
     // Check for conflicts (Room, Teacher, Student Batch)
-    public function checkConflict($day, $timeSlot, $roomId, $teacherId, $batchId, $excludeId = null)
+    public function checkConflict($day, $start, $end, $roomId, $teacherId, $batchId, $excludeId = null)
     {
         // 1. Room Conflict
         if ($roomId) {
-            $sql = "SELECT * FROM timetable WHERE day = ? AND time_slot = ? AND room_id = ? AND status != 'cancelled'";
-            $params = [$day, $timeSlot, $roomId];
+            $sql = "SELECT * FROM timetable 
+                    WHERE day = ? AND room_id = ? AND status != 'cancelled'
+                    AND start_time < ? AND end_time > ?";
+            $params = [$day, $roomId, $end, $start];
             if ($excludeId) {
                 $sql .= " AND id != ?";
                 $params[] = $excludeId;
@@ -31,8 +33,10 @@ class ArrangementEngine
 
         // 2. Teacher Conflict
         if ($teacherId) {
-            $sql = "SELECT * FROM timetable WHERE day = ? AND time_slot = ? AND teacher_id = ? AND status != 'cancelled'";
-            $params = [$day, $timeSlot, $teacherId];
+            $sql = "SELECT * FROM timetable 
+                    WHERE day = ? AND teacher_id = ? AND status != 'cancelled'
+                    AND start_time < ? AND end_time > ?";
+            $params = [$day, $teacherId, $end, $start];
             if ($excludeId) {
                 $sql .= " AND id != ?";
                 $params[] = $excludeId;
@@ -43,42 +47,65 @@ class ArrangementEngine
                 return "Teacher Conflict";
         }
 
-        // 3. Batch/Section Conflict (Students can't be in two places)
-        // Simplified: Check if this Batch+Section has another class at this time
-        // For MVP we check Batch-level conflict or Section-level? Usually Section.
+        // 3. Batch Conflict
         if ($batchId) {
-            // We need to know section_id too for accurate check, 
-            // but let's assume if the exact same batch group has a class.
-            // For strictness, we should pass sectionId. 
-            // Leaving as generic Batch check or skipped for now if not passed.
+            $sql = "SELECT * FROM timetable 
+                    WHERE day = ? AND batch_id = ? AND status != 'cancelled'
+                    AND start_time < ? AND end_time > ?";
+            $params = [$day, $batchId, $end, $start];
+            if ($excludeId) {
+                $sql .= " AND id != ?";
+                $params[] = $excludeId;
+            }
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            if ($stmt->fetch())
+                return "Batch Conflict";
         }
 
         return null; // No conflict
     }
 
-    public function getAvailableRooms($day, $timeSlot)
+    public function getAvailableRooms($day, $start, $end)
     {
+        // Find rooms NOT occupied during this interval
+        // Overlap logic: A overlaps B if (StartA < EndB) AND (EndA > StartB)
+        // We want rooms where NO class overlaps.
+        
         $sql = "SELECT * FROM rooms 
                 WHERE id NOT IN (
                     SELECT room_id FROM timetable 
-                    WHERE day = ? AND time_slot = ? AND status != 'cancelled' AND room_id IS NOT NULL
+                    WHERE day = ? 
+                    AND status != 'cancelled' 
+                    AND room_id IS NOT NULL
+                    AND start_time IS NOT NULL 
+                    AND end_time IS NOT NULL
+                    AND (
+                        (start_time < ? AND end_time > ?)
+                    )
                 )
                 ORDER BY name";
+        
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$day, $timeSlot]);
+        // Param 1: Day
+        // Param 2: Query End (If existing class starts before requested end)
+        // Param 3: Query Start (If existing class ends after requested start)
+        // Logic: Overlap = Class.Start < Req.End AND Class.End > Req.Start
+        $stmt->execute([$day, $end, $start]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public function getAvailableTeachers($day, $timeSlot)
+    public function getAvailableTeachers($day, $start, $end)
     {
         $sql = "SELECT * FROM teachers 
                 WHERE id NOT IN (
                     SELECT teacher_id FROM timetable 
-                    WHERE day = ? AND time_slot = ? AND status != 'cancelled' AND teacher_id IS NOT NULL
+                    WHERE day = ? AND status != 'cancelled' AND teacher_id IS NOT NULL
+                    AND start_time < ? AND end_time > ?
                 )
                 ORDER BY name";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$day, $timeSlot]);
+        $stmt->execute([$day, $end, $start]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 

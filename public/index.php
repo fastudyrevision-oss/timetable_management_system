@@ -13,6 +13,8 @@ use App\Controllers\TeacherController;
 use App\Controllers\AcademicController;
 use App\Controllers\ArrangementController;
 use App\Controllers\ExportController;
+use App\Controllers\SocietyController;
+use App\Controllers\AdminController;
 
 // Simple Router
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -25,12 +27,34 @@ $teacherController = new TeacherController($pdo);
 $academicController = new AcademicController($pdo);
 $arrangementController = new ArrangementController($pdo);
 $exportController = new ExportController($pdo);
+$societyController = new SocietyController($pdo);
+$adminController = new AdminController($pdo);
 
 // Routing Logic
 switch ($uri) {
     case '/':
+        require '../src/Views/public/home.php';
+        break;
+    case '/timetable':
+        $timetableController->publicIndex();
+        break;
+    case '/faculty':
+        $timetableController->publicFaculty();
+        break;
+    case '/societies':
+        $societyController->publicIndex();
+        break;
+    case (preg_match('/^\/society\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->publicView($matches[1]);
+        break;
     case '/login':
         $authController->login();
+        break;
+    case '/signup':
+        $authController->signup();
+        break;
+    case '/auth/check-uniqueness':
+        $authController->checkUniqueness();
         break;
     case '/logout':
         $authController->logout();
@@ -108,6 +132,32 @@ switch ($uri) {
         }
         $teacherController->create();
         break;
+    case (preg_match('/^\/admin\/teachers\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: /login');
+            exit;
+        }
+        $teacherController->edit($matches[1]);
+        break;
+    case '/admin/teachers/update':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $teacherController->update();
+        break;
+    case '/admin/teachers/check':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('HTTP/1.1 401 Unauthorized');
+            exit;
+        }
+        $teacherController->check();
+        break;
+    case (preg_match('/^\/admin\/teachers\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: /login');
+            exit;
+        }
+        $teacherController->delete($matches[1]);
+        break;
 
     // Academic Routes (Batches, Sections, Semesters, Subjects)
     case '/admin/academic':
@@ -121,6 +171,11 @@ switch ($uri) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
             exit;
         $academicController->createBatch();
+        break;
+    case (preg_match('/^\/admin\/academic\/batch\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->deleteBatch($matches[1]);
         break;
     case '/admin/academic/create-section':
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
@@ -136,6 +191,44 @@ switch ($uri) {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
             exit;
         $academicController->createSubject();
+        break;
+    case (preg_match('/^\/admin\/academic\/subject\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->editSubject($matches[1]);
+        break;
+    case '/admin/academic/subject/update':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->updateSubject();
+        break;
+    case '/admin/academic/subject/merge':
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin')
+            exit;
+        $academicController->mergeDuplicateSubjects();
+        break;
+
+    // Admin User & Log Routes
+    case '/admin/users':
+        $adminController->manageUsers();
+        break;
+    case (preg_match('/^\/admin\/users\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        $adminController->editUser($matches[1]);
+        break;
+    case '/admin/users/update':
+        $adminController->updateUser();
+        break;
+    case (preg_match('/^\/admin\/users\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        $adminController->deleteUser($matches[1]);
+        break;
+    case '/admin/user/approve':
+        $adminController->approveUser($_GET['id']);
+        break;
+    case '/admin/user/reject':
+        $adminController->rejectUser($_GET['id']);
+        break;
+    case '/admin/logs':
+        $adminController->auditLogs();
         break;
 
     // Arrangement Routes
@@ -186,6 +279,29 @@ switch ($uri) {
             exit;
         }
         require '../src/Views/cr/dashboard.php';
+        break;
+
+    // Society President Routes
+    case '/society/dashboard':
+        $societyController->dashboard();
+        break;
+    case '/society/member/add':
+        $societyController->addMember();
+        break;
+    case (preg_match('/^\/society\/member\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->editMember($matches[1]);
+        break;
+    case '/society/member/update':
+        $societyController->updateMember();
+        break;
+    case (preg_match('/^\/society\/member\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->deleteMember($matches[1]);
+        break;
+    case '/society/event/add':
+        $societyController->addEvent();
+        break;
+    case '/society/news/add':
+        $societyController->addNews();
         break;
 
     // GR Routes
