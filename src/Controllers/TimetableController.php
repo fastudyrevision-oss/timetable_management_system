@@ -30,6 +30,18 @@ class TimetableController
         require '../src/Views/public/timetable.php';
     }
 
+    public function publicFaculty()
+    {
+        $stmt = $this->pdo->query("SELECT * FROM teachers WHERE is_faculty = 1 ORDER BY (CASE WHEN post LIKE '%Chairman%' OR post LIKE '%Hod%' THEN 0 ELSE 1 END), name ASC");
+        $teachers = $stmt->fetchAll();
+        require '../src/Views/public/faculty.php';
+    }
+
+    public function publicSocieties()
+    {
+        require '../src/Views/public/societies.php';
+    }
+
     private function getTimetableData()
     {
         // 1. Fetch Filter Data
@@ -189,8 +201,30 @@ class TimetableController
                 // 1. First, identify all unique groups in the parsed data and clear their existing timetable
                 $affectedGroups = [];
                 foreach ($data as $row) {
-                    $batchName = substr($row['batch'] ?? 'General', 0, 50);
-                    $sectionName = substr($row['section'] ?? 'A', 0, 50);
+                    // New parser uses 'programme' instead of 'batch' and 'section'
+                    $programme = $row['programme'] ?? 'General';
+                    // Very basic extraction: 
+                    // Assume everything before "Semester#" is the batch/section info
+                    // This is a naive split just to keep it unique per group as it was before.
+                    $parts = explode('Semester#', $programme);
+                    $batchInfo = trim($parts[0]);
+                    
+                    // We'll treat the whole name as the batch for now if we can't extract section easily
+                    // Or we can try to find "Practical" or section details.
+                    // For the clearing phase, uniqueness is what matters most.
+                    $batchName = substr($batchInfo, 0, 50);
+                    
+                    $sectionName = 'Regular';
+                    if (preg_match('/(Self Support \d+)/i', $programme, $smatch)) {
+                        $sectionName = $smatch[1];
+                    } elseif (stripos($programme, 'Self Support') !== false) {
+                        $sectionName = 'Self Support';
+                    }
+
+                    if (stripos($programme, 'Practical') !== false) {
+                        $sectionName = ($sectionName === 'Regular') ? 'Practical' : $sectionName . ' (Practical)';
+                    }
+                    
                     $batchId = $this->getOrCreate('batches', 'name', $batchName);
                     $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
                     $groupKey = "$batchId-$sectionId";
@@ -204,17 +238,38 @@ class TimetableController
 
                 // 2. Insert new data
                 foreach ($data as $row) {
-                    if (empty($row['day']) || empty($row['time_slot']))
+                    if (empty($row['day']) || empty($row['start_time']))
                         continue;
 
                     $subjectName = substr($row['subject'] ?? 'Unknown Subject', 0, 100);
                     $teacherName = substr($row['teacher'] ?? 'TBA', 0, 100);
                     $roomName = substr($row['room'] ?? 'TBA', 0, 50);
-                    $batchName = substr($row['batch'] ?? 'General', 0, 50);
-                    $sectionName = substr($row['section'] ?? 'A', 0, 50);
-                    $subjectCode = substr($row['subject_code'] ?? null, 0, 20);
+                    $subjectCode = substr($row['course_code'] ?? null, 0, 20);
+                    
+                    $programme = $row['programme'] ?? 'General';
+                    $parts = explode('Semester#', $programme);
+                    $batchName = substr(trim($parts[0]), 0, 50);
+                    
+                    $sectionName = 'Regular';
+                    if (preg_match('/(Self Support \d+)/i', $programme, $smatch)) {
+                        $sectionName = $smatch[1];
+                    } elseif (stripos($programme, 'Self Support') !== false) {
+                        $sectionName = 'Self Support';
+                    }
 
-                    $semesterId = $this->getOrCreateSemester($row['semester'] ?? '1', $batchName);
+                    if (stripos($programme, 'Practical') !== false) {
+                        $sectionName = ($sectionName === 'Regular') ? 'Practical' : $sectionName . ' (Practical)';
+                    }
+                    
+                    $semNum = '1';
+                    if (count($parts) > 1) {
+                         // Extract the first number found after 'Semester#'
+                         if (preg_match('/(\d+)/', $parts[1], $matches)) {
+                             $semNum = $matches[1];
+                         }
+                    }
+
+                    $semesterId = $this->getOrCreateSemester($semNum, $batchName);
 
                     // Subject Matching: Code is unique identifier
                     $subjectId = null;
@@ -242,11 +297,22 @@ class TimetableController
                     $batchId = $this->getOrCreate('batches', 'name', $batchName);
                     $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
 
-                    $times = $this->parseTimeSlot($row['time_slot']);
+                    $start_time = $row['start_time'] ?? null;
+                    $end_time = $row['end_time'] ?? null;
+                    
+                    // The new parser doesn't provide time_slot directly, so we reconstruct it
+                    $time_slot = "$start_time - $end_time";
+                    
+                    if (!$start_time || !$end_time) {
+                        $times = $this->parseTimeSlot($row['time_slot']);
+                        $start_time = $times[0];
+                        $end_time = $times[1];
+                    }
+
                     $stmt = $this->pdo->prepare("INSERT INTO timetable 
                         (batch_id, section_id, semester_id, subject_id, teacher_id, room_id, day, time_slot, start_time, end_time, status)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
-                    $stmt->execute([$batchId, $sectionId, $semesterId, $subjectId, $teacherId, $roomId, $row['day'], $row['time_slot'], $times[0], $times[1]]);
+                    $stmt->execute([$batchId, $sectionId, $semesterId, $subjectId, $teacherId, $roomId, $row['day'], $time_slot, $start_time, $end_time]);
                     $count++;
                 }
 
@@ -273,9 +339,16 @@ class TimetableController
                 exit;
 
             try {
-                $this->pdo->exec("DELETE FROM timetable");
-                $this->pdo->exec("ALTER TABLE timetable AUTO_INCREMENT = 1");
-                $_SESSION['flash_message'] = "Timetable cleared successfully.";
+                $this->pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+                
+                $tables = ['timetable', 'subjects', 'semesters', 'sections', 'batches', 'teachers', 'rooms'];
+                foreach ($tables as $table) {
+                    $this->pdo->exec("TRUNCATE TABLE `$table`");
+                }
+                
+                $this->pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+                
+                $_SESSION['flash_message'] = "All database data has been cleared successfully.";
             } catch (\Exception $e) {
                 $_SESSION['flash_message'] = "Error clearing data: " . $e->getMessage();
             }

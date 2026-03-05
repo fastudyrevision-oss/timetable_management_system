@@ -66,8 +66,8 @@ require '../src/Views/layouts/header.php';
                         <li><a class="dropdown-item" href="/admin/export/csv">CSV</a></li>
                     </ul>
                 </div>
-                <form action="/admin/timetable/clear" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE ALL timetable records? This cannot be undone.');">
-                    <button type="submit" class="btn btn-danger me-2">Clear All</button>
+                <form action="/admin/timetable/clear" method="POST" class="d-inline" onsubmit="return confirm('WARNING: This will DELETE ALL records including Batches, Subjects, Teachers, Rooms, and Timetables. This action cannot be undone. Are you sure?');">
+                    <button type="submit" class="btn btn-danger me-2">Reset Database</button>
                 </form>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
                   Upload PDF
@@ -194,7 +194,7 @@ require '../src/Views/layouts/header.php';
                                                             <i class="bi bi-person"></i> <?= htmlspecialchars($cls['teacher_name']) ?>
                                                         </div>
                                                         <div class="meta-line text-muted small">
-                                                            <?= htmlspecialchars($cls['batch_name']) ?> | 
+                                                            <?= htmlspecialchars($cls['batch_name']) ?> | Sem <?= htmlspecialchars($cls['semester_num']) ?> | 
                                                             <?= htmlspecialchars($cls['section_name']) ?>
                                                         </div>
                                                         <?php if($cls['status'] == 'cancelled'): ?>

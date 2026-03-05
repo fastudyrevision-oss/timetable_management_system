@@ -16,7 +16,7 @@ class Teacher
 
     public function getAll()
     {
-        $stmt = $this->pdo->query("SELECT * FROM teachers");
+        $stmt = $this->pdo->query("SELECT * FROM teachers WHERE is_faculty = 1 ORDER BY name");
         return $stmt->fetchAll();
     }
 }

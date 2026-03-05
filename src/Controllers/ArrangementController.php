@@ -38,7 +38,7 @@ class ArrangementController
         }
 
         $availableRooms = $this->engine->getAvailableRooms($slot['day'], $s_start, $s_end);
-        $availableTeachers = $this->engine->getAvailableTeachers($slot['day'], $slot['time_slot']);
+        $availableTeachers = $this->engine->getAvailableTeachers($slot['day'], $s_start, $s_end);
         
         // Fetch All Subjects
         $stmtSub = $this->pdo->query("SELECT * FROM subjects ORDER BY name");

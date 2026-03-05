@@ -1,172 +1,162 @@
 import pdfplumber
 import json
 import re
-import sys
 
-# Ensure UTF-8 output
-sys.stdout.reconfigure(encoding='utf-8')
+# ── regex patterns ────────────────────────────────────────────────────────────
+TIME_PATTERN    = re.compile(r'\((\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\)')
+COURSE_PATTERN  = re.compile(r'#([A-Z]{2,6}-\d{3,4}(?:-\d+)?)')
+ROOM_PATTERN    = re.compile(r'(?:CR[-\s]?\d+[A-Za-z]?|L-\d+|CyberL-\d+|Smart\s*Lab)', re.IGNORECASE)
+DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-if len(sys.argv) < 2:
-    print(json.dumps({"error": "No PDF file provided"}))
-    sys.exit(1)
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-pdf_path = sys.argv[1]
-data = []
+def parse_room_label(cell_text: str) -> str:
+    """Extract the room/lab identifier from the first column."""
+    if not cell_text:
+        return ""
+    match = ROOM_PATTERN.search(cell_text)
+    if match:
+        return match.group(0).strip()
+    # fallback: last non-empty line of the cell (usually the room id)
+    lines = [l.strip() for l in cell_text.splitlines() if l.strip()]
+    return lines[-1] if lines else cell_text.strip()
 
-# Regex patterns
-patterns = {
-    'time': r'\(\s*(\d{1,2}:\d{2}\s*(?:-|to)\s*\d{1,2}:\d{2})\s*\)',
-    # Allow optional # prefix, standard course code format like CSC-101 or CSC101
-    'code': r'(?:#)?([A-Z]{2,4}[- ]?\d{3,4})', 
-    'section': r'(Regular|Self Support\s*\d*|Section\s*[A-Z])',
-    'semester': r'Semester\s*[#]?\s*(\d+|…|\.{3})', 
-    'room_header': r'(ROOM|LAB|CR)[\s-]*(\d+)',
-}
 
-days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
-def parse_single_block(text, day, room, time_slot):
-    if not text:
-        return None
-
-    # Clean text - Remove "was: ..." notes which are common in Ramadan/Revised schedules
-    text = re.sub(r'was:\s*\d{1,2}:\d{2}\s*(-|to)\s*\d{1,2}:\d{2}', '', text, flags=re.IGNORECASE).strip()
-
-    # 1. Subject Code
-    subject_code = None
-    code_match = re.search(patterns['code'], text)
-    if code_match:
-        subject_code = code_match.group(1)
-    
-    # 2. Subject Name
-    subject_name = "Unknown"
-    if code_match:
-        # Everything before the code
-        raw_subject = text[:code_match.start()].strip()
-        # Remove common noise like leading numbers or "Combined ()"
-        raw_subject = re.sub(r'Combined\s*\(\s*\)', '', raw_subject, flags=re.IGNORECASE)
-        subject_name = re.sub(r'^\d+\s*', '', raw_subject).strip()
-    else:
-        # Fallback: everything before the first newline or parenthesis
-        subject_name = re.split(r'[\(\n]', text)[0].strip()
-
-    # 3. Section
-    section = None
-    sec_match = re.search(patterns['section'], text, re.IGNORECASE)
-    if sec_match:
-        section = sec_match.group(1).strip()
-
-    # 4. Semester
-    semester = "0" 
-    # Try to find "(Xth Semester Intake)" or "Semester X"
-    sem_intake_match = re.search(r'(\d+)(?:st|nd|rd|th)\s*Semester\s*Intake', text, re.IGNORECASE)
-    if sem_intake_match:
-        semester = sem_intake_match.group(1)
-    else:
-        sem_match = re.search(patterns['semester'], text, re.IGNORECASE)
-        if sem_match:
-            raw_sem = sem_match.group(1)
-            if raw_sem.isdigit():
-                semester = raw_sem
-
-    # 5. Teacher (Improved)
-    teacher = "TBA"
-    
-    # Batch detection (Improved)
-    batch = None
-    # Look for "BS in [Anything]" or "MSc [Anything]" etc.
-    batch_pattern = r'(BS|MSc|MS|BE|BBA|AD)\s+(?:in\s+)?([\w\s]+?)(?=\s+(?:Regular|Self Support|Section|\()|$)'
-    batch_match = re.search(batch_pattern, text, re.IGNORECASE)
-    if batch_match:
-        batch = f"{batch_match.group(1)} {batch_match.group(2)}".strip()
-    
-    # Text after all known entities to find teacher
-    last_end = 0
-    if code_match: last_end = max(last_end, code_match.end())
-    
-    # Usually teacher is at the very end before the time slot (which is already removed from text in parse_blocks)
-    # Let's try to split by newline and take the last meaningful line that isn't the batch/semester info
-    lines = [l.strip() for l in text.split('\n') if l.strip()]
-    if lines:
-        for line in reversed(lines):
-            # Teacher usually doesn't have "Semester" or "Intake" or "Section" or the subject code
-            if not any(word in line for word in ["Semester", "Intake", "Regular", "Support", "202"]) and not re.search(patterns['code'], line):
-                teacher = line
-                break
-
-    return {
-        "day": day,
-        "room": room,
-        "subject": subject_name if len(subject_name) > 2 else "Subject",
-        "subject_code": subject_code if subject_code else "TBA",
-        "teacher": teacher,
-        "semester": semester,
-        "section": section,
-        "batch": batch,
-        "time_slot": time_slot,
-        "raw_text": f"{text} ({time_slot})"
-    }
-
-def parse_blocks(cell_text, day, room):
+def parse_cell(cell_text: str, room: str, day: str) -> list[dict]:
+    """
+    A single table cell can contain *multiple* classes stacked on top of each
+    other.  Split on the Delete marker (\\uf1f8 Delete) that appears after each
+    entry, then parse each block individually.
+    """
     if not cell_text or not cell_text.strip():
         return []
 
-    # Find all time slots
-    time_matches = list(re.finditer(patterns['time'], cell_text))
-    if not time_matches:
-        return []
+    # Split into individual class blocks
+    blocks = re.split(r'\uf1f8\s*Delete', cell_text)
+    records = []
 
-    blocks = []
-    for i in range(len(time_matches)):
-        start_idx = time_matches[i].start()
-        end_idx = time_matches[i+1].start() if i + 1 < len(time_matches) else len(cell_text)
-        
-        time_slot = time_matches[i].group(1)
-        content_text = cell_text[time_matches[i].end():end_idx].strip()
-        
-        item = parse_single_block(content_text, day, room, time_slot)
-        if item:
-            blocks.append(item)
-    
-    return blocks
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
 
-try:
+        lines = [l.strip() for l in block.splitlines() if l.strip()]
+        if not lines:
+            continue
+
+        # ── course name & code ────────────────────────────────────────────
+        # First line usually: "Course Name #CODE" or "#CODE Course Name"
+        subject_line = lines[0]
+
+        # Remove "Combined (nnn)" prefix that sometimes appears
+        subject_line = re.sub(r'^Combined\s*\(\d*\)\s*', '', subject_line).strip()
+
+        course_match = COURSE_PATTERN.search(block)
+        course_code  = course_match.group(1) if course_match else ""
+
+        # Subject name = everything before the #CODE tag on the first content line
+        subject_name = re.split(r'\s*#[A-Z]', subject_line)[0].strip()
+        if not subject_name:
+            # try second line (sometimes "Combined ()" sits on line 0)
+            subject_name = re.split(r'\s*#[A-Z]', lines[1])[0].strip() if len(lines) > 1 else ""
+
+        # ── programme / section ──────────────────────────────────────────
+        programme = ""
+        for line in lines:
+            if re.search(r'BS in|MS |PhD|Semester#', line):
+                programme = line
+                break
+
+        # ── teacher & time ───────────────────────────────────────────────
+        teacher    = ""
+        start_time = ""
+        end_time   = ""
+
+        for line in lines:
+            time_match = TIME_PATTERN.search(line)
+            if time_match:
+                start_time = time_match.group(1)
+                end_time   = time_match.group(2)
+                # Teacher name is the text *before* the parenthesised time
+                teacher_part = line[:time_match.start()].strip()
+                if teacher_part:
+                    teacher = teacher_part
+                break
+
+        # ── previous (original) time ─────────────────────────────────────
+        was_time = ""
+        was_match = re.search(r'was:\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', block)
+        if was_match:
+            was_time = f"{was_match.group(1)} - {was_match.group(2)}"
+
+        # Only emit if we captured at least a time slot
+        if not start_time:
+            continue
+
+        records.append({
+            "subject":      subject_name,
+            "course_code":  course_code,
+            "teacher":      teacher,
+            "programme":    programme,
+            "room":         room,
+            "day":          day,
+            "start_time":   start_time,
+            "end_time":     end_time,
+            "was_time":     was_time,
+        })
+
+    return records
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+def parse_timetable(pdf_path: str) -> list[dict]:
+    all_records = []
+
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
+        # Skip page 0 (cover / class list page)
+        for page_num, page in enumerate(pdf.pages[1:], start=2):
             tables = page.extract_tables()
-            
             for table in tables:
-                if not table: continue
-                
-                # Header Processing
-                headers = [str(h).strip().replace('\n', ' ') if h else "" for h in table[0]]
-                
-                col_day_map = {}
-                for idx, h in enumerate(headers):
-                    for d in days_of_week:
-                        if d in h:
-                            col_day_map[idx] = d
-                            break
-                            
-                if not col_day_map: continue
+                if not table:
+                    continue
+                # Identify header row
+                header = table[0] if table else []
+                # Check it really is a schedule table (has day names)
+                if not any(d in str(header) for d in DAYS):
+                    continue
+
+                # Map column index → day name
+                day_map: dict[int, str] = {}
+                for col_idx, cell in enumerate(header):
+                    for day in DAYS:
+                        if cell and day in cell:
+                            day_map[col_idx] = day
 
                 for row in table[1:]:
-                    if not row: continue
-                    
-                    # Room detection
-                    current_room = str(row[0]).strip() if row[0] else "TBA"
-                    r_match = re.search(patterns['room_header'], current_room, re.IGNORECASE)
-                    if r_match:
-                        current_room = f"{r_match.group(1)}-{r_match.group(2)}"
+                    if not row:
+                        continue
+                    room = parse_room_label(row[0] if row[0] else "")
 
-                    for col_idx, cell_content in enumerate(row):
-                        if col_idx in col_day_map:
-                            day = col_day_map[col_idx]
-                            items = parse_blocks(cell_content, day, current_room)
-                            data.extend(items)
+                    for col_idx, cell in enumerate(row[1:], start=1):
+                        day = day_map.get(col_idx, "")
+                        records = parse_cell(cell, room, day)
+                        all_records.extend(records)
 
-except Exception as e:
-    print(json.dumps({"error": str(e), "data": data}))
-    sys.exit(0)
+    return all_records
 
-print(json.dumps(data, indent=2))
+
+if __name__ == "__main__":
+    import sys
+    import io
+
+    # Force stdout to be utf-8
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    
+    if len(sys.argv) > 1:
+        PDF_PATH = sys.argv[1]
+    else:
+        PDF_PATH = "IT Class Timetable Spring 2026 V4 (Ramadan).pdf"
+
+    records = parse_timetable(PDF_PATH)
+    print(json.dumps(records, ensure_ascii=False))

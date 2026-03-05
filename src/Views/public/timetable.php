@@ -43,8 +43,24 @@
         <img src="/assets/images/logo.png" alt="Logo" height="40" class="me-2">
         University Timetable
     </a>
-    <div class="d-flex">
-        <a href="/login" class="btn btn-outline-light btn-sm">Login (Admin/CR/GR)</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavbar">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="publicNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link nav-hover" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link nav-hover active" href="/timetable">Timetable</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link nav-hover" href="/faculty">Faculty</a>
+            </li>
+        </ul>
+        <div class="d-flex">
+            <a href="/login" class="btn btn-outline-light btn-sm">Login (Admin/CR/GR)</a>
+        </div>
     </div>
   </div>
 </nav>
@@ -150,7 +166,7 @@
                                                                 <i class="bi bi-person"></i> <?= htmlspecialchars($cls['teacher_name']) ?>
                                                             </div>
                                                             <div class="meta-line text-muted small">
-                                                                <?= htmlspecialchars($cls['batch_name']) ?> | 
+                                                                <?= htmlspecialchars($cls['batch_name']) ?> | Sem <?= htmlspecialchars($cls['semester_num']) ?> | 
                                                                 <?= htmlspecialchars($cls['section_name']) ?>
                                                             </div>
                                                             <?php if($cls['status'] == 'cancelled'): ?>

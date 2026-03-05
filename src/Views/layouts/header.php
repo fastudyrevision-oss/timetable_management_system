@@ -37,6 +37,12 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link nav-hover" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-hover" href="/timetable">Timetable</a></li>
+                    <li class="nav-item"><a class="nav-link nav-hover" href="/faculty">Faculty</a></li>
+                    <li class="nav-item"><a class="nav-link nav-hover" href="/societies">Societies</a></li>
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
