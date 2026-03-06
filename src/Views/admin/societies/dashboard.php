@@ -9,6 +9,8 @@
     <title>President Dashboard - <?= htmlspecialchars($society['name']) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -21,6 +23,9 @@
         .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.1); }
         .stat-card { border: none; border-radius: 16px; transition: transform 0.3s; }
         .stat-card:hover { transform: translateY(-5px); }
+        .cropper-container { max-height: 400px; margin-bottom: 20px; }
+        #logo-preview-container { text-align: center; margin-bottom: 15px; }
+        #logo-preview { max-width: 100%; height: auto; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -35,6 +40,7 @@
                     <hr class="text-white-50">
                     <ul class="nav flex-column gap-2 mt-4">
                         <li class="nav-item"><a href="#" class="nav-link active rounded-3 p-3"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                        <li class="nav-item"><a href="#" class="nav-link rounded-3 p-3" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear me-2"></i> Society Settings</a></li>
                         <li class="nav-item"><a href="/" class="nav-link rounded-3 p-3"><i class="bi bi-house me-2"></i> View Site</a></li>
                         <li class="nav-item"><a href="/logout" class="nav-link rounded-3 p-3 text-danger"><i class="bi bi-box-arrow-left me-2"></i> Logout</a></li>
                     </ul>
@@ -252,7 +258,64 @@
         </div>
     </div>
 
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form action="/society/update" method="POST" id="settingsForm" class="modal-content border-0 shadow">
+                <input type="hidden" name="cropped_logo" id="cropped_logo_input">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Society Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Society Name</label>
+                                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($society['name']) ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Description</label>
+                                <textarea name="description" class="form-control" rows="5" required><?= htmlspecialchars($society['description']) ?></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6 border-start">
+                            <label class="form-label fw-bold">Update Logo</label>
+                            <input type="file" id="logo_input" class="form-control mb-3" accept="image/*">
+                            
+                            <div id="cropper-wrapper" style="display: none;">
+                                <div class="cropper-container">
+                                    <img id="logo_to_crop" src="">
+                                </div>
+                                <div class="btn-group w-100 mb-3">
+                                    <button type="button" class="btn btn-outline-secondary" id="zoomIn"><i class="bi bi-zoom-in"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" id="zoomOut"><i class="bi bi-zoom-out"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" id="resetCropper"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                    <span class="input-group-text bg-light small fw-bold" id="zoomValue">100%</span>
+                                </div>
+                                <button type="button" class="btn btn-success w-100 mb-3" id="applyCrop">Confirm Crop</button>
+                            </div>
+
+                            <div id="logo-preview-container">
+                                <p class="text-muted small mb-2">Current Logo Preview:</p>
+                                <img id="logo-preview" src="<?= $society['logo_path'] ?? '/assets/images/default-society.png' ?>" class="border p-2 mb-3">
+                                <?php if (!empty($society['logo_path'])): ?>
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" id="editCurrentLogo">
+                                        <i class="bi bi-pencil-square"></i> Edit Current Logo
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill shadow">Save All Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
         document.querySelectorAll('.edit-member-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -285,6 +348,61 @@
                 }
             };
         });
+
+        // Cropper Logic
+        let cropper;
+        const logoInput = document.getElementById('logo_input');
+        const logoToCrop = document.getElementById('logo_to_crop');
+        const wrapper = document.getElementById('cropper-wrapper');
+        const preview = document.getElementById('logo-preview');
+        const croppedInput = document.getElementById('cropped_logo_input');
+        const editCurrentBtn = document.getElementById('editCurrentLogo');
+
+        function initCropper(imageSrc) {
+            logoToCrop.src = imageSrc;
+            wrapper.style.display = 'block';
+            
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(logoToCrop, {
+                aspectRatio: NaN, // Free form
+                viewMode: 0, // Allow zooming out past the crop box
+                dragMode: 'move',
+                autoCropArea: 1,
+                background: false,
+                zoom: function(e) {
+                    const ratio = Math.round(e.detail.ratio * 100);
+                    document.getElementById('zoomValue').innerText = ratio + '%';
+                }
+            });
+        }
+
+        if (editCurrentBtn) {
+            editCurrentBtn.onclick = function() {
+                initCropper(preview.src);
+            };
+        }
+
+        logoInput.onchange = function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    initCropper(reader.result);
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        };
+
+        document.getElementById('zoomIn').onclick = () => cropper.zoom(0.1);
+        document.getElementById('zoomOut').onclick = () => cropper.zoom(-0.1);
+        document.getElementById('resetCropper').onclick = () => cropper.reset();
+
+        document.getElementById('applyCrop').onclick = function() {
+            const canvas = cropper.getCroppedCanvas(); // Free form output
+            preview.src = canvas.toDataURL();
+            croppedInput.value = canvas.toDataURL();
+            wrapper.style.display = 'none';
+        };
     </script>
 </body>
 </html>

@@ -303,6 +303,9 @@ switch ($uri) {
     case '/society/news/add':
         $societyController->addNews();
         break;
+    case '/society/update':
+        $societyController->updateSociety();
+        break;
 
     // GR Routes
     case '/gr/dashboard':

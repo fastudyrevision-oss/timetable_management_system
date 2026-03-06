@@ -277,12 +277,12 @@ require '../src/Views/layouts/header.php';
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label small mb-1">From</label>
-                    <input type="time" id="searchStart" class="form-control">
+                    <label class="form-label small mb-1">From (24h)</label>
+                    <input type="text" id="searchStart" class="form-control" placeholder="09:30" pattern="[0-9]{1,2}:[0-9]{2}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label small mb-1">To</label>
-                    <input type="time" id="searchEnd" class="form-control">
+                    <label class="form-label small mb-1">To (24h)</label>
+                    <input type="text" id="searchEnd" class="form-control" placeholder="11:00" pattern="[0-9]{1,2}:[0-9]{2}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button class="btn btn-primary w-100" onclick="searchAvailability()">Search</button>

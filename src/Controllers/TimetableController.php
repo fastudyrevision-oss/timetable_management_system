@@ -250,20 +250,37 @@ class TimetableController
                     $parts = explode('Semester#', $programme);
                     $batchName = substr(trim($parts[0]), 0, 50);
                     
-                    $sectionName = 'Regular';
-                    if (preg_match('/(Self Support \d+)/i', $programme, $smatch)) {
-                        $sectionName = $smatch[1];
+                    // Identify sections
+                    $sectionsFound = [];
+                    if (preg_match_all('/Self Support (\d+)/i', $programme, $matches)) {
+                        foreach ($matches[1] as $num) {
+                            $sectionsFound[] = "Self Support $num";
+                        }
                     } elseif (stripos($programme, 'Self Support') !== false) {
-                        $sectionName = 'Self Support';
+                        $sectionsFound = ['Self Support'];
                     }
 
+                    // Also check for things like "1 & 2" or "1, 2" after "Self Support"
+                    if (stripos($programme, 'Self Support') !== false && empty($sectionsFound)) {
+                         if (preg_match('/Self Support\s*(\d+)\s*(?:&|,|and)\s*(\d+)/i', $programme, $sm)) {
+                             $sectionsFound = ["Self Support {$sm[1]}", "Self Support {$sm[2]}"];
+                         }
+                    }
+
+                    // If no specific Self Support sections found, default to 'Regular'
+                    if (empty($sectionsFound)) {
+                        $sectionsFound = ['Regular'];
+                    }
+
+                    // Add 'Practical' if present
                     if (stripos($programme, 'Practical') !== false) {
-                        $sectionName = ($sectionName === 'Regular') ? 'Practical' : $sectionName . ' (Practical)';
+                        foreach ($sectionsFound as $key => $section) {
+                            $sectionsFound[$key] = ($section === 'Regular') ? 'Practical' : $section . ' (Practical)';
+                        }
                     }
                     
                     $semNum = '1';
                     if (count($parts) > 1) {
-                         // Extract the first number found after 'Semester#'
                          if (preg_match('/(\d+)/', $parts[1], $matches)) {
                              $semNum = $matches[1];
                          }
@@ -278,7 +295,6 @@ class TimetableController
                         $stmtCode->execute([$subjectCode]);
                         $subjectId = $stmtCode->fetchColumn();
                     }
-
                     if (!$subjectId) {
                         $stmtName = $this->pdo->prepare("SELECT id FROM subjects WHERE name = ?");
                         $stmtName->execute([$subjectName]);
@@ -287,7 +303,6 @@ class TimetableController
                             $this->pdo->prepare("UPDATE subjects SET code = ? WHERE id = ?")->execute([$subjectCode, $subjectId]);
                         }
                     }
-
                     if (!$subjectId) {
                         $subjectId = $this->getOrCreate('subjects', 'name', $subjectName, ['code' => $subjectCode, 'semester_id' => $semesterId]);
                     }
@@ -295,7 +310,6 @@ class TimetableController
                     $teacherId = $this->getOrCreate('teachers', 'name', $teacherName);
                     $roomId = (!empty($roomName) && $roomName !== 'TBA') ? $this->getOrCreate('rooms', 'name', $roomName) : null;
                     $batchId = $this->getOrCreate('batches', 'name', $batchName);
-                    $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
 
                     $start_time = $row['start_time'] ?? null;
                     $end_time = $row['end_time'] ?? null;
@@ -308,12 +322,16 @@ class TimetableController
                         $start_time = $times[0];
                         $end_time = $times[1];
                     }
+                    
+                    foreach ($sectionsFound as $sectionName) {
+                        $sectionId = $this->getOrCreate('sections', 'name', $sectionName, ['batch_id' => $batchId]);
 
-                    $stmt = $this->pdo->prepare("INSERT INTO timetable 
-                        (batch_id, section_id, semester_id, subject_id, teacher_id, room_id, day, time_slot, start_time, end_time, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
-                    $stmt->execute([$batchId, $sectionId, $semesterId, $subjectId, $teacherId, $roomId, $row['day'], $time_slot, $start_time, $end_time]);
-                    $count++;
+                        $stmt = $this->pdo->prepare("INSERT INTO timetable 
+                            (batch_id, section_id, semester_id, subject_id, teacher_id, room_id, day, time_slot, start_time, end_time, status)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
+                        $stmt->execute([$batchId, $sectionId, $semesterId, $subjectId, $teacherId, $roomId, $row['day'], $time_slot, $start_time, $end_time]);
+                        $count++;
+                    }
                 }
 
                 $this->pdo->commit();

@@ -149,4 +149,37 @@ class SocietyController {
         }
         return null;
     }
+
+    public function updateSociety() {
+        $this->checkPresident();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $society_id = $_SESSION['society_id'];
+            $data = [
+                'name' => $_POST['name'],
+                'description' => $_POST['description']
+            ];
+
+            // Handle Cropped Logo (Base64)
+            if (!empty($_POST['cropped_logo'])) {
+                $base64_image = $_POST['cropped_logo'];
+                $image_parts = explode(";base64,", $base64_image);
+                $image_type_aux = explode("image/", $image_parts[0]);
+                $image_type = $image_type_aux[1];
+                $image_base64 = base64_decode($image_parts[1]);
+                
+                $filename = 'logo_' . time() . '.' . $image_type;
+                $upload_dir = __DIR__ . '/../../public/uploads/societies';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                file_put_contents($upload_dir . '/' . $filename, $image_base64);
+                $data['logo_path'] = '/uploads/societies/' . $filename;
+            }
+
+            $this->societyModel->update($society_id, $data);
+            header("Location: /society/dashboard");
+            exit;
+        }
+    }
 }

@@ -34,14 +34,14 @@ require '../src/Views/layouts/header.php';
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Start Time</label>
-                            <input type="time" name="start_time" class="form-control" value="<?= substr($s_start, 0, 5) ?>" required>
+                            <label class="form-label fw-bold">Start Time (24h)</label>
+                            <input type="text" name="start_time" class="form-control" value="<?= substr($s_start, 0, 5) ?>" placeholder="HH:mm" pattern="[0-9]{1,2}:[0-9]{2}" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">End Time</label>
-                            <input type="time" name="end_time" class="form-control" value="<?= substr($s_end, 0, 5) ?>" required>
+                            <label class="form-label fw-bold">End Time (24h)</label>
+                            <input type="text" name="end_time" class="form-control" value="<?= substr($s_end, 0, 5) ?>" placeholder="HH:mm" pattern="[0-9]{1,2}:[0-9]{2}" required>
                         </div>
-                        <div class="form-text">Changing time will impact the time slot display.</div>
+                        <div class="form-text">Format: 24-hour (e.g. 14:30 for 2:30 PM).</div>
                     </div>
 
                     <div class="mb-3">

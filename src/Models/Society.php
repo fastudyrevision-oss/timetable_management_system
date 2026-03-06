@@ -122,4 +122,17 @@ class Society {
             $data['content']
         ]);
     }
+
+    public function update($id, $data) {
+        $fields = [];
+        $params = [];
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = ?";
+            $params[] = $value;
+        }
+        $params[] = $id;
+        $sql = "UPDATE societies SET " . implode(", ", $fields) . " WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
+    }
 }

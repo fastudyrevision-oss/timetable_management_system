@@ -19,13 +19,17 @@ require '../src/Views/layouts/header.php';
                     <div class="card-overlay"></div>
                     <div class="card-content">
                         <div class="icon-box mb-4">
-                            <?php 
-                                $icon = 'bi-people';
-                                if (stripos($society['name'], 'Event') !== false) $icon = 'bi-megaphone';
-                                if (stripos($society['name'], 'GMS') !== false) $icon = 'bi-palette';
-                                if (stripos($society['name'], 'Welfare') !== false) $icon = 'bi-heart-pulse';
-                            ?>
-                            <i class="bi <?= $icon ?> display-3 text-white"></i>
+                            <?php if (!empty($society['logo_path'])): ?>
+                                <img src="<?= htmlspecialchars($society['logo_path']) ?>" alt="<?= htmlspecialchars($society['name']) ?> Logo" class="img-fluid rounded-circle" style="width: 100%; height: 100%; object-fit: cover; border: 2px solid rgba(255,255,255,0.2);">
+                            <?php else: ?>
+                                <?php 
+                                    $icon = 'bi-people';
+                                    if (stripos($society['name'], 'Event') !== false) $icon = 'bi-megaphone';
+                                    if (stripos($society['name'], 'GMS') !== false) $icon = 'bi-palette';
+                                    if (stripos($society['name'], 'Welfare') !== false) $icon = 'bi-heart-pulse';
+                                ?>
+                                <i class="bi <?= $icon ?> display-3 text-white"></i>
+                            <?php endif; ?>
                         </div>
                         <h3 class="fw-bold text-white mb-1"><?= htmlspecialchars($society['name']) ?></h3>
                         <p class="text-white-50 small mb-3">President: <?= htmlspecialchars($society['president_name'] ?? 'TBA') ?></p>

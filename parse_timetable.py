@@ -5,33 +5,36 @@ import re
 # ── regex patterns ────────────────────────────────────────────────────────────
 TIME_PATTERN    = re.compile(r'\((\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\)')
 COURSE_PATTERN  = re.compile(r'#([A-Z]{2,6}-\d{3,4}(?:-\d+)?)')
-ROOM_PATTERN    = re.compile(r'(?:CR[-\s]?\d+[A-Za-z]?|L-\d+|CyberL-\d+|Smart\s*Lab)', re.IGNORECASE)
+ROOM_PATTERN    = re.compile(r'(?:CR[-\s]?\d+[A-Za-z]?|L-\d+|CyberL-\d+|Smart\s*Lab|(?:[A-Z][a-z]+\s+)?Hall)', re.IGNORECASE)
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def parse_room_label(cell_text: str) -> str:
-    """Extract the room/lab identifier from the first column."""
+    """
+    Extract the room/lab identifier from the first column.
+    Tries to match a known pattern; if none, returns the whole cleaned text.
+    """
     if not cell_text:
         return ""
-    match = ROOM_PATTERN.search(cell_text)
+    # Join all lines and search for a room pattern
+    full_text = " ".join(line.strip() for line in cell_text.splitlines() if line.strip())
+    match = ROOM_PATTERN.search(full_text)
     if match:
         return match.group(0).strip()
-    # fallback: last non-empty line of the cell (usually the room id)
-    lines = [l.strip() for l in cell_text.splitlines() if l.strip()]
-    return lines[-1] if lines else cell_text.strip()
-
+    # Fallback: return the whole cell text (cleaned)
+    return full_text
 
 def parse_cell(cell_text: str, room: str, day: str) -> list[dict]:
     """
-    A single table cell can contain *multiple* classes stacked on top of each
-    other.  Split on the Delete marker (\\uf1f8 Delete) that appears after each
-    entry, then parse each block individually.
+    Parse a single table cell which may contain multiple class entries.
+    Each entry is separated by the Delete marker (\uf1f8 Delete).
+    Within an entry, multiple course codes (combined classes) are handled.
     """
     if not cell_text or not cell_text.strip():
         return []
 
-    # Split into individual class blocks
+    # Split into blocks by the Delete marker
     blocks = re.split(r'\uf1f8\s*Delete', cell_text)
     records = []
 
@@ -41,72 +44,72 @@ def parse_cell(cell_text: str, room: str, day: str) -> list[dict]:
             continue
 
         lines = [l.strip() for l in block.splitlines() if l.strip()]
-        if not lines:
-            continue
+        buffer = []          # holds lines that belong to the subject prefix (before a code line)
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            codes = COURSE_PATTERN.findall(line)
 
-        # ── course name & code ────────────────────────────────────────────
-        # First line usually: "Course Name #CODE" or "#CODE Course Name"
-        subject_line = lines[0]
+            if codes:
+                # --- this line contains one or more course codes ---
+                # Build full subject name: buffer (prefix lines) + part of this line before the first '#'
+                subject_prefix = " ".join(buffer).strip()
+                code_part = line[:line.find('#')].strip()
+                full_subject = (subject_prefix + " " + code_part).strip()
 
-        # Remove "Combined (nnn)" prefix that sometimes appears
-        subject_line = re.sub(r'^Combined\s*\(\d*\)\s*', '', subject_line).strip()
+                # Collect details lines that follow (until next code line or end)
+                details = []
+                j = i + 1
+                while j < len(lines) and not COURSE_PATTERN.search(lines[j]):
+                    details.append(lines[j])
+                    j += 1
 
-        course_match = COURSE_PATTERN.search(block)
-        course_code  = course_match.group(1) if course_match else ""
+                # Extract common information from the details
+                teacher = ""
+                start_time = ""
+                end_time = ""
+                for det in details:
+                    time_match = TIME_PATTERN.search(det)
+                    if time_match:
+                        start_time = time_match.group(1)
+                        end_time = time_match.group(2)
+                        teacher = det[:time_match.start()].strip()
+                        break
 
-        # Subject name = everything before the #CODE tag on the first content line
-        subject_name = re.split(r'\s*#[A-Z]', subject_line)[0].strip()
-        if not subject_name:
-            # try second line (sometimes "Combined ()" sits on line 0)
-            subject_name = re.split(r'\s*#[A-Z]', lines[1])[0].strip() if len(lines) > 1 else ""
+                programme = ""
+                for det in details:
+                    if re.search(r'BS in|MS |PhD|Semester#', det):
+                        programme = det
+                        break
 
-        # ── programme / section ──────────────────────────────────────────
-        programme = ""
-        for line in lines:
-            if re.search(r'BS in|MS |PhD|Semester#', line):
-                programme = line
-                break
+                was_time = ""
+                was_match = re.search(r'was:\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', "\n".join(details))
+                if was_match:
+                    was_time = f"{was_match.group(1)} - {was_match.group(2)}"
 
-        # ── teacher & time ───────────────────────────────────────────────
-        teacher    = ""
-        start_time = ""
-        end_time   = ""
+                # Create one record per course code
+                for code in codes:
+                    records.append({
+                        "subject":      full_subject,
+                        "course_code":  code,
+                        "teacher":      teacher,
+                        "programme":    programme,
+                        "room":         room,
+                        "day":          day,
+                        "start_time":   start_time,
+                        "end_time":     end_time,
+                        "was_time":     was_time,
+                    })
 
-        for line in lines:
-            time_match = TIME_PATTERN.search(line)
-            if time_match:
-                start_time = time_match.group(1)
-                end_time   = time_match.group(2)
-                # Teacher name is the text *before* the parenthesised time
-                teacher_part = line[:time_match.start()].strip()
-                if teacher_part:
-                    teacher = teacher_part
-                break
-
-        # ── previous (original) time ─────────────────────────────────────
-        was_time = ""
-        was_match = re.search(r'was:\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', block)
-        if was_match:
-            was_time = f"{was_match.group(1)} - {was_match.group(2)}"
-
-        # Only emit if we captured at least a time slot
-        if not start_time:
-            continue
-
-        records.append({
-            "subject":      subject_name,
-            "course_code":  course_code,
-            "teacher":      teacher,
-            "programme":    programme,
-            "room":         room,
-            "day":          day,
-            "start_time":   start_time,
-            "end_time":     end_time,
-            "was_time":     was_time,
-        })
+                # Clear buffer and move index to the line after details
+                buffer = []
+                i = j
+            else:
+                # No code in this line – add to buffer (subject prefix)
+                buffer.append(line)
+                i += 1
 
     return records
-
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
@@ -120,18 +123,19 @@ def parse_timetable(pdf_path: str) -> list[dict]:
             for table in tables:
                 if not table:
                     continue
-                # Identify header row
+                # Identify header row (must contain a day name)
                 header = table[0] if table else []
-                # Check it really is a schedule table (has day names)
                 if not any(d in str(header) for d in DAYS):
                     continue
 
                 # Map column index → day name
-                day_map: dict[int, str] = {}
+                day_map = {}
                 for col_idx, cell in enumerate(header):
-                    for day in DAYS:
-                        if cell and day in cell:
-                            day_map[col_idx] = day
+                    if cell:
+                        for day in DAYS:
+                            if day in cell:
+                                day_map[col_idx] = day
+                                break
 
                 for row in table[1:]:
                     if not row:
@@ -145,9 +149,9 @@ def parse_timetable(pdf_path: str) -> list[dict]:
 
     return all_records
 
-
 if __name__ == "__main__":
-    PDF_PATH = "IT Class Timetable Spring 2026 V4 (Ramadan).pdf"
+    # UPDATED to the new file name
+    PDF_PATH = "public/uploads/IT Class Timetable Spring 2026 V5-A (Ramadan).pdf"
     OUTPUT   = "timetable.json"
 
     records = parse_timetable(PDF_PATH)
