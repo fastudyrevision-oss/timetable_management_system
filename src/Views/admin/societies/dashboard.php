@@ -131,7 +131,60 @@
                             </div>
                             <div class="card-body">
                                 <button class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addEventModal">Schedule Event</button>
-                                <button class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#addNewsModal">Post News</button>
+                                <button class="btn btn-outline-secondary w-100 mb-4" data-bs-toggle="modal" data-bs-target="#addNewsModal">Post News</button>
+                                
+                                <h6 class="fw-bold small text-muted text-uppercase mb-3">Quick Actions</h6>
+                                <button class="btn btn-light w-100 text-start mb-2" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="bi bi-person-circle me-2"></i> Profile Settings</button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Events -->
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold mb-0">Manage Events</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($events as $event): ?>
+                                    <li class="list-group-item p-3 border-0 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="fw-bold mb-1"><?= htmlspecialchars($event['title']) ?></h6>
+                                                <p class="small text-muted mb-0"><?= date('M d, Y', strtotime($event['event_date'])) ?></p>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-link text-primary edit-event-btn" data-id="<?= $event['id'] ?>"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-link text-danger delete-event-btn" data-id="<?= $event['id'] ?>"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </div>
+
+                         <!-- Recent News -->
+                         <div class="card border-0 shadow-sm rounded-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="fw-bold mb-0">Manage News</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($news as $item): ?>
+                                    <li class="list-group-item p-3 border-0 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="fw-bold mb-1"><?= htmlspecialchars($item['title']) ?></h6>
+                                                <p class="small text-muted mb-0"><?= date('M d, Y', strtotime($item['created_at'])) ?></p>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-link text-primary edit-news-btn" data-id="<?= $item['id'] ?>"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-link text-danger delete-news-btn" data-id="<?= $item['id'] ?>"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -236,7 +289,7 @@
 
     <div class="modal fade" id="addNewsModal" tabindex="-1">
         <div class="modal-dialog">
-            <form action="/society/news/add" method="POST" class="modal-content border-0 shadow">
+            <form action="/society/news/add" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Post News</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -250,9 +303,109 @@
                         <label class="form-label">Content</label>
                         <textarea name="content" class="form-control" rows="5" required></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Post Image (Optional)</label>
+                        <input type="file" name="news_image" class="form-control" accept="image/*">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary px-4 rounded-pill">Post News</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Event Modal -->
+    <div class="modal fade" id="editEventModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="/society/event/update" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+                <input type="hidden" name="id" id="edit_event_id">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Event</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" name="title" id="edit_event_title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" id="edit_event_description" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" name="event_date" id="edit_event_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Update Poster (Optional)</label>
+                        <input type="file" name="poster" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">Update Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit News Modal -->
+    <div class="modal fade" id="editNewsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="/society/news/update" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+                <input type="hidden" name="id" id="edit_news_id">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit News</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" id="edit_news_title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Content</label>
+                        <textarea name="content" id="edit_news_content" class="form-control" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Update Image (Optional)</label>
+                        <input type="file" name="news_image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">Update News</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="/society/profile/update" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Profile Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 text-center">
+                        <img src="<?= $society['president_picture'] ?? '/assets/images/default-avatar.png' ?>" class="rounded-circle border p-1 mb-2" style="width: 100px; height: 100px; object-fit: cover;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Name (Display Name)</label>
+                        <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($society['president_name'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password (Leave empty to keep current)</label>
+                        <input type="password" name="password" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Update Profile Picture</label>
+                        <input type="file" name="profile_pic" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">Update Profile</button>
                 </div>
             </form>
         </div>
@@ -338,6 +491,51 @@
                         new bootstrap.Modal(document.getElementById('editMemberModal')).show();
                     });
             });
+        });
+
+        document.querySelectorAll('.edit-event-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                fetch(`/society/event/edit/${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('edit_event_id').value = data.id;
+                        document.getElementById('edit_event_title').value = data.title;
+                        document.getElementById('edit_event_description').value = data.description;
+                        document.getElementById('edit_event_date').value = data.event_date.replace(' ', 'T');
+                        new bootstrap.Modal(document.getElementById('editEventModal')).show();
+                    });
+            });
+        });
+
+        document.querySelectorAll('.edit-news-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                fetch(`/society/news/edit/${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('edit_news_id').value = data.id;
+                        document.getElementById('edit_news_title').value = data.title;
+                        document.getElementById('edit_news_content').value = data.content;
+                        new bootstrap.Modal(document.getElementById('editNewsModal')).show();
+                    });
+            });
+        });
+
+        document.querySelectorAll('.delete-event-btn').forEach(btn => {
+            btn.onclick = function() {
+                if (confirm('Are you sure you want to delete this event?')) {
+                    window.location.href = `/society/event/delete/${this.getAttribute('data-id')}`;
+                }
+            };
+        });
+
+        document.querySelectorAll('.delete-news-btn').forEach(btn => {
+            btn.onclick = function() {
+                if (confirm('Are you sure you want to delete this news post?')) {
+                    window.location.href = `/society/news/delete/${this.getAttribute('data-id')}`;
+                }
+            };
         });
 
         document.querySelectorAll('.btn-outline-danger').forEach(btn => {

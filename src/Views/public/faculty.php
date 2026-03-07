@@ -45,12 +45,14 @@ require '../src/Views/layouts/header.php';
                                 <span class="badge-post"><?= htmlspecialchars($post) ?></span>
                                 <?php if(!empty($teacher['email'])): ?>
                                     <div class="email-info">
-                                        <i class="bi bi-envelope-at me-1"></i><?= htmlspecialchars($teacher['email']) ?>
+                                        <a href="mailto:<?= htmlspecialchars($teacher['email']) ?>" class="text-reset text-decoration-none">
+                                            <i class="bi bi-envelope-at me-1"></i><?= htmlspecialchars($teacher['email']) ?>
+                                        </a>
                                     </div>
                                 <?php endif; ?>
                                 <?php if(!empty($teacher['qualification'])): ?>
                                     <div class="qualification mt-2">
-                                        <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.6rem;">Qualification</small>
+                                        <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.75rem;">Qualification</small>
                                         <p class="mb-0 x-small"><?= nl2br(htmlspecialchars($teacher['qualification'])) ?></p>
                                     </div>
                                 <?php endif; ?>
@@ -153,7 +155,7 @@ require '../src/Views/layouts/header.php';
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.2rem;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
 }
 
 .badge-post {
@@ -162,13 +164,13 @@ require '../src/Views/layouts/header.php';
     background: #eff6ff;
     color: #1d4ed8;
     border-radius: 9999px;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
 }
 
 .email-info {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     color: #64748b;
     margin-bottom: 0.5rem;
     word-break: break-all;
@@ -182,7 +184,7 @@ require '../src/Views/layouts/header.php';
 }
 
 .x-small {
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     line-height: 1.3;
 }
 
@@ -219,7 +221,7 @@ require '../src/Views/layouts/header.php';
 }
 
 .research-list {
-    font-size: 0.85rem;
+    font-size: 1rem;
     padding-left: 2rem;
     margin-bottom: 0;
     max-height: 250px;

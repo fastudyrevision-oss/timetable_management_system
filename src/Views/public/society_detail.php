@@ -59,6 +59,9 @@ require '../src/Views/layouts/header.php';
                     <div class="card mb-3 border-0 shadow-sm">
                         <div class="card-body">
                             <h6 class="fw-bold mb-1"><?= htmlspecialchars($item['title']) ?></h6>
+                            <?php if (!empty($item['image_path'])): ?>
+                                <img src="<?= htmlspecialchars($item['image_path']) ?>" class="img-fluid rounded mb-2 w-100" alt="News Image" style="max-height: 200px; object-fit: cover;">
+                            <?php endif; ?>
                             <p class="small text-muted mb-2"><?= nl2br(htmlspecialchars($item['content'])) ?></p>
                             <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i><?= date('M d, Y', strtotime($item['created_at'])) ?></span>
                         </div>
@@ -70,18 +73,56 @@ require '../src/Views/layouts/header.php';
 
     <!-- Members Section -->
     <div class="row mb-5">
-        <div class="col-12">
-            <h3 class="fw-bold mb-4 border-bottom pb-2">Our Team</h3>
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold display-6">Our Team</h2>
+            <div class="header-line mx-auto" style="width: 60px; height: 4px; background: #4f46e5; border-radius: 2px;"></div>
         </div>
-        <?php foreach ($members as $member): ?>
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 border-0 shadow-sm transition-hover text-center p-3">
-                    <div class="member-img-wrapper mb-3 mx-auto">
-                        <img src="<?= $member['picture_path'] ?? '/assets/images/default-avatar.png' ?>" class="rounded-circle shadow-sm" alt="Member" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #f8f9fa;">
+
+        <?php
+        $leadership = [];
+        $coreTeam = [];
+        $executiveCouncil = [];
+        $generalTeam = [];
+
+        foreach ($members as $member) {
+            $desc = strtolower($member['designation']);
+            if (strpos($desc, 'president') !== false) {
+                $leadership[] = $member;
+            } elseif (strpos($desc, 'secretary') !== false || strpos($desc, 'treasurer') !== false) {
+                $coreTeam[] = $member;
+            } elseif (strpos($desc, 'director') !== false || strpos($desc, 'executive') !== false || strpos($desc, 'head') !== false || strpos($desc, 'coordinator') !== false) {
+                $executiveCouncil[] = $member;
+            } else {
+                $generalTeam[] = $member;
+            }
+        }
+
+        $sections = [
+            ['title' => 'Leadership', 'members' => $leadership, 'col' => 'col-lg-4 col-md-6'],
+            ['title' => 'Core Office Bearers', 'members' => $coreTeam, 'col' => 'col-lg-3 col-md-4'],
+            ['title' => 'Executive Council', 'members' => $executiveCouncil, 'col' => 'col-lg-3 col-md-4'],
+            ['title' => 'Team Members', 'members' => $generalTeam, 'col' => 'col-lg-3 col-md-4']
+        ];
+
+        foreach ($sections as $section):
+            if (empty($section['members'])) continue;
+        ?>
+            <div class="col-12 mb-4 mt-2">
+                <h4 class="fw-bold text-uppercase letter-spacing-1 text-muted small border-bottom pb-2 mb-4"><?= $section['title'] ?></h4>
+            </div>
+            
+            <div class="row g-4 justify-content-center mb-5">
+                <?php foreach ($section['members'] as $member): ?>
+                    <div class="<?= $section['col'] ?>">
+                        <div class="card h-100 border-0 shadow-sm transition-hover text-center p-3 rounded-4">
+                            <div class="member-img-wrapper mb-3 mx-auto">
+                                <img src="<?= $member['picture_path'] ?? '/assets/images/default-avatar.png' ?>" class="rounded-circle shadow-sm" alt="Member" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #f8f9fa;">
+                            </div>
+                            <h5 class="fw-bold mb-1" style="font-size: 1.1rem;"><?= htmlspecialchars($member['name']) ?></h5>
+                            <p class="text-primary small mb-0 fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;"><?= htmlspecialchars($member['designation']) ?></p>
+                        </div>
                     </div>
-                    <h5 class="fw-bold mb-1"><?= htmlspecialchars($member['name']) ?></h5>
-                    <p class="text-primary small mb-0"><?= htmlspecialchars($member['designation']) ?></p>
-                </div>
+                <?php endforeach; ?>
             </div>
         <?php endforeach; ?>
     </div>

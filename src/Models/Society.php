@@ -114,13 +114,56 @@ class Society {
         ]);
     }
 
+    public function getEventById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM society_events WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function updateEvent($id, $data) {
+        if (!empty($data['poster_path'])) {
+            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ?, poster_path = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $data['poster_path'], $id]);
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $id]);
+        }
+    }
+
+    public function deleteEvent($id) {
+        $stmt = $this->pdo->prepare("DELETE FROM society_events WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
     public function addNews($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO society_news (society_id, title, content) VALUES (?, ?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO society_news (society_id, title, content, image_path) VALUES (?, ?, ?, ?)");
         return $stmt->execute([
             $data['society_id'],
             $data['title'],
-            $data['content']
+            $data['content'],
+            $data['image_path'] ?? null
         ]);
+    }
+
+    public function getNewsById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM society_news WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function updateNews($id, $data) {
+        if (!empty($data['image_path'])) {
+            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ?, image_path = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['content'], $data['image_path'], $id]);
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['content'], $id]);
+        }
+    }
+
+    public function deleteNews($id) {
+        $stmt = $this->pdo->prepare("DELETE FROM society_news WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 
     public function update($id, $data) {

@@ -21,7 +21,7 @@ class AuthController
     public function login()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $identifier = $_POST['identifier'] ?? ''; // Can be username or roll_number
+            $identifier = trim($_POST['identifier'] ?? ''); // Can be username or roll_number
             $password = $_POST['password'] ?? '';
 
             $user = $this->userModel->findByRollNumber($identifier);
@@ -76,8 +76,8 @@ class AuthController
     public function signup()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $roll_number = $_POST['roll_number'] ?? '';
+            $username = trim($_POST['username'] ?? '');
+            $roll_number = trim($_POST['roll_number'] ?? '');
             $email = $_POST['email'] ?? '';
             $phone_number = $_POST['phone_number'] ?? '';
             $password = $_POST['password'] ?? '';

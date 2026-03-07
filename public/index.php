@@ -309,6 +309,27 @@ switch ($uri) {
     case '/society/update':
         $societyController->updateSociety();
         break;
+    case '/society/profile/update':
+        $societyController->updateProfile();
+        break;
+    case (preg_match('/^\/society\/event\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->editEvent($matches[1]);
+        break;
+    case '/society/event/update':
+        $societyController->updateEvent();
+        break;
+    case (preg_match('/^\/society\/event\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->deleteEvent($matches[1]);
+        break;
+    case (preg_match('/^\/society\/news\/edit\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->editNews($matches[1]);
+        break;
+    case '/society/news/update':
+        $societyController->updateNews();
+        break;
+    case (preg_match('/^\/society\/news\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        $societyController->deleteNews($matches[1]);
+        break;
 
     // GR Routes
     case '/gr/dashboard':
