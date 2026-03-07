@@ -32,7 +32,13 @@ class TimetableController
 
     public function publicFaculty()
     {
-        $stmt = $this->pdo->query("SELECT * FROM teachers WHERE is_faculty = 1 ORDER BY (CASE WHEN post LIKE '%Chairman%' OR post LIKE '%Hod%' THEN 0 ELSE 1 END), name ASC");
+        $stmt = $this->pdo->query("SELECT * FROM teachers WHERE is_faculty = 1 ORDER BY 
+            (CASE 
+                WHEN post LIKE '%Chairman%' THEN 0 
+                WHEN post LIKE '%CSA%' THEN 1
+                WHEN post LIKE '%Deputy Registrar%' THEN 2
+                ELSE 3 
+            END), name ASC");
         $teachers = $stmt->fetchAll();
         require '../src/Views/public/faculty.php';
     }
@@ -359,10 +365,13 @@ class TimetableController
             try {
                 $this->pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
                 
-                $tables = ['timetable', 'subjects', 'semesters', 'sections', 'batches', 'teachers', 'rooms'];
+                $tables = ['timetable', 'subjects', 'semesters', 'sections', 'batches', 'rooms'];
                 foreach ($tables as $table) {
                     $this->pdo->exec("TRUNCATE TABLE `$table`");
                 }
+                
+                // Preserve faculty teachers
+                $this->pdo->exec("DELETE FROM teachers WHERE is_faculty = 0");
                 
                 $this->pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
                 

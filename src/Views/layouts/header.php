@@ -27,27 +27,48 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 border-bottom shadow-sm">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="/">
-                <img src="/assets/images/logo.png" alt="Logo" height="40" class="me-2">
-                Timetable System
+                <img src="/assets/images/final_logo.png" alt="University of Sargodha" height="50" class="me-2">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <?php $current_uri = $_SERVER['REQUEST_URI']; ?>
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link nav-hover" href="/">Home</a></li>
-                    <li class="nav-item"><a class="nav-link nav-hover" href="/timetable">Timetable</a></li>
-                    <li class="nav-item"><a class="nav-link nav-hover" href="/faculty">Faculty</a></li>
-                    <li class="nav-item"><a class="nav-link nav-hover" href="/societies">Societies</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/' || $current_uri == '') ? 'active-nav' : '' ?>" href="/">
+                            <i class="bi bi-house-door me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/timetable') ? 'active-nav' : '' ?>" href="/timetable">
+                            <i class="bi bi-calendar3 me-1"></i>Timetable
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/academic-calendar') ? 'active-nav' : '' ?>" href="/academic-calendar">
+                            <i class="bi bi-calendar-check me-1"></i>Academic Calendar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/faculty') ? 'active-nav' : '' ?>" href="/faculty">
+                            <i class="bi bi-people me-1"></i>Faculty
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/societies') ? 'active-nav' : '' ?>" href="/societies">
+                            <i class="bi bi-mortarboard me-1"></i>Societies
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <?php if (isset($_SESSION['user_id'])): ?>
-                        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>
                     <?php else: ?>
-                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/login"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a></li>
                     <?php endif; ?>
                 </ul>
             </div>

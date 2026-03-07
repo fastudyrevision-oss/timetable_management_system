@@ -1,129 +1,89 @@
 <?php
 // src/Views/public/timetable.php
-// Reuse header if possible, or simple HTML
+require '../src/Views/layouts/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timetable</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <style>
-        body { background-color: #f4f6f9; }
-        /* Select2 Bootstrap 5 Theme Fixes (optional, but good for consistency) */
-        .select2-container .select2-selection--single { height: 31px !important; } 
-        .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 31px !important; }
-        
-        .grid-container { overflow-x: auto; }
-        .grid-table th, .grid-table td { vertical-align: top; min-width: 200px; }
-        .class-card {
-            border-left: 4px solid #007bff;
-            background: #fff;
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .class-card.conflict { border-left-color: #dc3545; background: #fff5f5; }
-        .class-card.cancelled { border-left-color: #6c757d; background: #e9ecef; opacity: 0.7; }
-        .time-badge { font-weight: bold; font-size: 0.8em; color: #555; background: #e2e6ea; padding: 2px 4px; border-radius: 3px; }
-        .meta-line { display: block; color: #666; font-size: 0.8em; margin-top: 2px; }
-    </style>
-</head>
-<body>
+</div> <!-- Close header.php's .container to start fluid layout -->
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="/">
-        <img src="/assets/images/logo.png" alt="Logo" height="40" class="me-2">
-        University Timetable
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavbar">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="publicNavbar">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-                <a class="nav-link nav-hover" href="/">Home</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link nav-hover active" href="/timetable">Timetable</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link nav-hover" href="/faculty">Faculty</a>
-            </li>
-        </ul>
-        <div class="d-flex">
-            <a href="/login" class="btn btn-outline-light btn-sm">Login (Admin/CR/GR)</a>
-        </div>
-    </div>
-  </div>
-</nav>
+<style>
+    body { background-color: #f4f6f9; }
+    .grid-container { overflow-x: auto; }
+    .grid-table th, .grid-table td { vertical-align: top; min-width: 200px; }
+    .class-card {
+        border-left: 4px solid #007bff;
+        background: #fff;
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .class-card.conflict { border-left-color: #dc3545; background: #fff5f5; }
+    .class-card.cancelled { border-left-color: #6c757d; background: #e9ecef; opacity: 0.7; }
+    .time-badge { font-weight: bold; font-size: 0.8em; color: #555; background: #e2e6ea; padding: 2px 4px; border-radius: 3px; }
+    .meta-line { display: block; color: #666; font-size: 0.8em; margin-top: 2px; }
+</style>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
             
-            <!-- Filters -->
-            <div class="card mb-4">
-                <div class="card-body py-2">
-                    <form method="GET" action="/" class="row g-2 align-items-center">
-                        <div class="col-auto">
-                            <label class="col-form-label fw-bold">Filter:</label>
-                        </div>
-                        
-                        <!-- Search Inputs -->
-                        <div class="col-auto">
-                            <input type="text" name="subject_search" class="form-control form-control-sm" placeholder="Subject..." value="<?= htmlspecialchars($_GET['subject_search'] ?? '') ?>">
-                        </div>
-                        <div class="col-auto">
-                            <input type="text" name="teacher_search" class="form-control form-control-sm" placeholder="Teacher..." value="<?= htmlspecialchars($_GET['teacher_search'] ?? '') ?>">
-                        </div>
-
-                        <!-- Dropdowns -->
-                        <div class="col-auto">
-                             <select name="semester_id" class="form-select form-select-sm select2">
-                                 <option value="">All Semesters</option>
-                                 <?php foreach($semesters as $sem): ?>
-                                    <option value="<?= $sem['id'] ?>" <?= (isset($_GET['semester_id']) && $_GET['semester_id'] == $sem['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($sem['batch_name']) ?> - Sem <?= $sem['number'] ?>
-                                    </option>
-                                 <?php endforeach; ?>
-                             </select>
-                        </div>
-
-                        <div class="col-auto">
-                             <select name="batch_id" class="form-select form-select-sm select2" onchange="this.form.submit()">
-                                 <option value="">All Batches</option>
-                                 <?php foreach($batches as $b): ?>
-                                    <option value="<?= $b['id'] ?>" <?= (isset($_GET['batch_id']) && $_GET['batch_id'] == $b['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($b['name']) ?>
-                                    </option>
-                                 <?php endforeach; ?>
-                             </select>
-                        </div>
-
-                        <div class="col-auto">
-                             <select name="section_id" class="form-select form-select-sm select2">
-                                 <option value="">All Sections</option>
-                                 <?php foreach($sections as $s): ?>
-                                    <?php if(empty($_GET['batch_id']) || $_GET['batch_id'] == $s['batch_id']): ?>
-                                        <option value="<?= $s['id'] ?>" <?= (isset($_GET['section_id']) && $_GET['section_id'] == $s['id']) ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($s['batch_name']) ?> - <?= htmlspecialchars($s['name']) ?>
+            <!-- Filters Section -->
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="GET" action="/timetable">
+                        <!-- Row 1: Search and Semester -->
+                        <div class="row g-3 align-items-end mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase mb-2">Subject Search</label>
+                                <input type="text" name="subject_search" class="form-control" placeholder="Search subject..." value="<?= htmlspecialchars($_GET['subject_search'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase mb-2">Teacher Search</label>
+                                <input type="text" name="teacher_search" class="form-control" placeholder="Search teacher..." value="<?= htmlspecialchars($_GET['teacher_search'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                 <label class="form-label fw-bold small text-muted text-uppercase mb-2">Select Semester</label>
+                                 <select name="semester_id" class="form-select select2" data-placeholder="All Semesters">
+                                     <option value=""></option>
+                                     <?php foreach($semesters as $sem): ?>
+                                        <option value="<?= $sem['id'] ?>" <?= (isset($_GET['semester_id']) && $_GET['semester_id'] == $sem['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($sem['batch_name']) ?> - Sem <?= $sem['number'] ?>
                                         </option>
-                                    <?php endif; ?>
-                                 <?php endforeach; ?>
-                             </select>
+                                     <?php endforeach; ?>
+                                 </select>
+                            </div>
                         </div>
 
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-                            <a href="/" class="btn btn-sm btn-outline-secondary">Reset</a>
+                        <!-- Row 2: Batch, Section and Buttons -->
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                 <label class="form-label fw-bold small text-muted text-uppercase mb-2">Select Batch</label>
+                                 <select name="batch_id" class="form-select select2" data-placeholder="All Batches" onchange="this.form.submit()">
+                                     <option value=""></option>
+                                     <?php foreach($batches as $b): ?>
+                                        <option value="<?= $b['id'] ?>" <?= (isset($_GET['batch_id']) && $_GET['batch_id'] == $b['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($b['name']) ?>
+                                        </option>
+                                     <?php endforeach; ?>
+                                 </select>
+                            </div>
+                            <div class="col-md-5">
+                                 <label class="form-label fw-bold small text-muted text-uppercase mb-2">Select Section</label>
+                                 <select name="section_id" class="form-select select2" data-placeholder="All Sections">
+                                     <option value=""></option>
+                                     <?php foreach($sections as $s): ?>
+                                        <?php if(empty($_GET['batch_id']) || $_GET['batch_id'] == $s['batch_id']): ?>
+                                            <option value="<?= $s['id'] ?>" <?= (isset($_GET['section_id']) && $_GET['section_id'] == $s['id']) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($s['batch_name']) ?> - <?= htmlspecialchars($s['name']) ?>
+                                            </option>
+                                        <?php endif; ?>
+                                     <?php endforeach; ?>
+                                 </select>
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1 fw-bold">Apply</button>
+                                <a href="/timetable" class="btn btn-outline-secondary px-3" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -189,13 +149,14 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('.select2').select2({
-            width: '100%' 
+        $('.select2').each(function() {
+            $(this).select2({
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                width: '100%'
+            });
         });
     });
 </script>

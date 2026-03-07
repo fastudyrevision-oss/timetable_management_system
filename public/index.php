@@ -35,6 +35,9 @@ switch ($uri) {
     case '/':
         require '../src/Views/public/home.php';
         break;
+    case '/academic-calendar':
+        require '../src/Views/public/academic_calendar.php';
+        break;
     case '/timetable':
         $timetableController->publicIndex();
         break;

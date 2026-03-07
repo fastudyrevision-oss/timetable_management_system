@@ -8,7 +8,7 @@ $tables = [
     'semesters',
     'sections',
     'batches',
-    'teachers',
+    'batches',
     'rooms',
     'users'
 ];
@@ -21,6 +21,10 @@ try {
         $pdo->exec("TRUNCATE TABLE `$table`");
         echo "Truncated table: $table\n";
     }
+
+    // Preserve faculty teachers
+    $pdo->exec("DELETE FROM teachers WHERE is_faculty = 0");
+    echo "Removed non-faculty teachers while preserving faculty members.\n";
     
     // Re-insert default admin
     $adminPassword = password_hash('password', PASSWORD_DEFAULT);
