@@ -44,7 +44,7 @@
                     </li>
                     <li class="mb-2 d-flex align-items-center">
                         <i class="bi bi-envelope-fill me-2 text-primary"></i>
-                        <span>Chairman.it@uos.edu.pk</span>
+                        <a href="mailto:Chairman.it@uos.edu.pk" class="text-white-50 text-decoration-none hover-white">Chairman.it@uos.edu.pk</a>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
                         <i class="bi bi-telephone-fill me-2 text-primary"></i>

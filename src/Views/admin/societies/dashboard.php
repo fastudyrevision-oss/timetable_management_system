@@ -18,31 +18,84 @@
             --bg-light: #f9fafb;
         }
         body { background-color: var(--bg-light); font-family: 'Inter', sans-serif; }
-        .sidebar { min-height: 100vh; background: #1e1b4b; color: white; }
+        .sidebar { min-height: 100vh; background: #1e1b4b; color: white; transition: all 0.3s; }
         .nav-link { color: rgba(255,255,255,0.7); transition: all 0.3s; }
         .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.1); }
         .stat-card { border: none; border-radius: 16px; transition: transform 0.3s; }
         .stat-card:hover { transform: translateY(-5px); }
+        
+        /* Mobile Adjustments */
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 1045;
+                width: 280px;
+                height: 100vh;
+                visibility: hidden;
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                visibility: visible;
+                transform: translateX(0);
+            }
+        }
+        .mobile-header {
+            display: none;
+            background: #1e1b4b;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+        @media (max-width: 767.98px) {
+            .mobile-header { display: flex; align-items: center; justify-content: space-between; }
+        }
         .cropper-container { max-height: 400px; margin-bottom: 20px; }
         #logo-preview-container { text-align: center; margin-bottom: 15px; }
         #logo-preview { max-width: 100%; height: auto; border-radius: 8px; }
     </style>
 </head>
 <body>
+    <!-- Mobile Toggle Header -->
+    <div class="mobile-header d-md-none">
+        <div class="d-flex align-items-center">
+            <img src="/assets/images/logo.png" alt="Logo" height="30" class="me-2">
+            <span class="fw-bold small">President Panel</span>
+        </div>
+        <button class="btn btn-outline-light border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse p-0">
-                <div class="p-4 text-center">
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse p-0 shadow" id="sidebarMenu">
+                <div class="p-4 text-center position-relative">
+                    <!-- Close button for mobile -->
+                    <button type="button" class="btn-close btn-close-white d-md-none position-absolute top-0 end-0 m-3" data-bs-toggle="collapse" data-bs-target="#sidebarMenu"></button>
+                    
                     <img src="<?= $society['president_picture'] ?? '/assets/images/default-avatar.png' ?>" class="rounded-circle border border-white border-opacity-25 p-1 mb-3" style="width: 80px; height: 80px; object-fit: cover;">
                     <h5 class="fw-bold mb-0 text-white"><?= htmlspecialchars($society['name']) ?></h5>
                     <p class="small text-white-50 mb-0">President: <?= htmlspecialchars($society['president_name'] ?? 'TBA') ?></p>
                     <hr class="text-white-50">
-                    <ul class="nav flex-column gap-2 mt-4">
-                        <li class="nav-item"><a href="#" class="nav-link active rounded-3 p-3"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link rounded-3 p-3" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear me-2"></i> Society Settings</a></li>
-                        <li class="nav-item"><a href="/" class="nav-link rounded-3 p-3"><i class="bi bi-house me-2"></i> View Site</a></li>
-                        <li class="nav-item"><a href="/logout" class="nav-link rounded-3 p-3 text-danger"><i class="bi bi-box-arrow-left me-2"></i> Logout</a></li>
+                    <ul class="nav flex-column gap-2 mt-4 text-start">
+                        <li class="nav-item text-center text-md-start">
+                            <a href="#" class="nav-link active rounded-3 p-3"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                        </li>
+                        <li class="nav-item text-center text-md-start">
+                            <a href="#" class="nav-link rounded-3 p-3" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear me-2"></i> Society Settings</a>
+                        </li>
+                        <li class="nav-item text-center text-md-start">
+                            <a href="/" class="nav-link rounded-3 p-3"><i class="bi bi-house me-2"></i> View Site</a>
+                        </li>
+                        <li class="divider my-2 border-top border-white border-opacity-10"></li>
+                        <li class="nav-item text-center text-md-start">
+                            <a href="/logout" class="nav-link rounded-3 p-3 text-danger"><i class="bi bi-box-arrow-left me-2"></i> Logout</a>
+                        </li>
                     </ul>
                 </div>
             </div>

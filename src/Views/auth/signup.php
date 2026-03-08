@@ -20,93 +20,125 @@
         }
 
         .signup-card {
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             background: white;
             margin: auto;
+            animation: slideUpFade 0.6s ease-out;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+            transform: translateX(50px) !important;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background-color: #4f46e5;
+            border: none;
+            padding: 0.8rem;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .form-control, .form-select {
+            padding: 0.75rem 1rem;
         }
     </style>
 </head>
 
 <body>
-    <div class="signup-card">
+    <div class="signup-card" id="authCard">
         <div class="text-center mb-4">
-            <img src="/assets/images/logo.png" alt="Logo" height="60" class="mb-2">
-            <h3>Timetable System</h3>
-            <p class="text-muted">Register as CR, GR, or President</p>
+            <img src="/assets/images/logo.png" alt="Logo" height="70" class="mb-3 transition-hover">
+            <h3 class="fw-bold text-dark">Create Account</h3>
+            <p class="text-muted small">Register as CR, GR, or Society President</p>
         </div>
         <?php if (isset($error)): ?>
-            <div class="alert alert-danger">
-                <?= htmlspecialchars($error) ?>
+            <div class="alert alert-danger border-0 shadow-sm rounded-3 small">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
         <form action="/signup" method="POST" id="signupForm">
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="e.g. Daniyal" required>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="username" class="form-label fw-bold small">Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-person text-muted"></i></span>
+                        <input type="text" class="form-control border-0 bg-light" id="username" name="username" placeholder="e.g. Daniyal" required>
+                    </div>
+                    <div id="username-error" class="text-danger extra-small mt-1" style="display: none;">Username taken.</div>
                 </div>
-                <div id="username-error" class="text-danger small mt-1" style="display: none;">Username already exists.</div>
-            </div>
-            
-            <div class="mb-3">
-                <label for="roll_number" class="form-label">Roll Number</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-card-text"></i></span>
-                    <input type="text" class="form-control" id="roll_number" name="roll_number" placeholder="BITF22M501" required>
-                </div>
-                <div id="roll-error" class="text-danger small mt-1" style="display: none;">Roll number already registered.</div>
-                <small class="text-muted">Use your university roll number as identifier.</small>
-            </div>
-
-            <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
-                    <input type="email" class="form-control" id="email" name="email" placeholder="e.g. user@example.com" required>
+                
+                <div class="col-md-6">
+                    <label for="roll_number" class="form-label fw-bold small">Roll Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-card-text text-muted"></i></span>
+                        <input type="text" class="form-control border-0 bg-light" id="roll_number" name="roll_number" placeholder="BITF22M501" required>
+                    </div>
+                    <div id="roll-error" class="text-danger extra-small mt-1" style="display: none;">Roll no registered.</div>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label for="phone_number" class="form-label">Phone Number</label>
+                <label for="email" class="form-label fw-bold small">Email Address</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
-                    <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="e.g. 0300-1234567" required>
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-envelope text-muted"></i></span>
+                    <input type="email" class="form-control border-0 bg-light" id="email" name="email" placeholder="user@example.com" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
+                <label for="phone_number" class="form-label fw-bold small">Phone Number</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                        <i class="bi bi-eye"></i>
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-telephone text-muted"></i></span>
+                    <input type="text" class="form-control border-0 bg-light" id="phone_number" name="phone_number" placeholder="0300-1234567" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label fw-bold small">Create Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-lock text-muted"></i></span>
+                    <input type="password" class="form-control border-0 bg-light" id="password" name="password" placeholder="••••••••" required>
+                    <button class="btn btn-light border-0 toggle-password" type="button">
+                        <i class="bi bi-eye text-muted"></i>
                     </button>
                 </div>
-                <div class="password-strength-meter mt-1">
-                    <div class="progress" style="height: 5px;">
+                <div class="password-strength-meter mt-2">
+                    <div class="progress" style="height: 4px;">
                         <div id="strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
                     </div>
-                    <small id="strength-text" class="text-muted" style="font-size: 0.75rem;">Password must contain letters and numbers (min 8 chars).</small>
+                    <small id="strength-text" class="text-muted extra-small">Complexity: low</small>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <label for="confirm_password" class="form-label fw-bold small">Verify Password</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-shield-check"></i></span>
-                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-shield-check text-muted"></i></span>
+                    <input type="password" class="form-control border-0 bg-light" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
                 </div>
-                <small id="match-text" class="text-danger" style="display: none; font-size: 0.75rem;">Passwords do not match.</small>
+                <small id="match-text" class="text-danger extra-small" style="display: none;">Passwords do not match.</small>
             </div>
-            <div class="mb-3">
-                <label for="role" class="form-label">Role</label>
-                <select class="form-select" id="role" name="role" required>
+
+            <div class="mb-4 pt-2 border-top">
+                <label for="role" class="form-label fw-bold small">Registering As</label>
+                <select class="form-select border-0 bg-primary bg-opacity-10 text-primary fw-bold" id="role" name="role" required>
                     <option value="" disabled selected>Select Role</option>
                     <option value="cr">CR (Class Representative)</option>
                     <option value="gr">GR (Girls Representative)</option>
@@ -115,8 +147,8 @@
             </div>
             
             <div class="mb-3" id="society-container" style="display: none;">
-                <label for="society_id" class="form-label">Society</label>
-                <select class="form-select" id="society_id" name="society_id">
+                <label for="society_id" class="form-label fw-bold small">Your Society</label>
+                <select class="form-select border-0 bg-light" id="society_id" name="society_id">
                     <option value="" disabled selected>Select Society</option>
                     <?php if (isset($societies)): foreach ($societies as $society): ?>
                         <option value="<?= $society['id'] ?>"><?= htmlspecialchars($society['name']) ?></option>
@@ -125,8 +157,8 @@
             </div>
 
             <div class="mb-3" id="batch-container" style="display: none;">
-                <label for="batch_id" class="form-label">Batch</label>
-                <select class="form-select" id="batch_id" name="batch_id">
+                <label for="batch_id" class="form-label fw-bold small">Batch</label>
+                <select class="form-select border-0 bg-light" id="batch_id" name="batch_id">
                     <option value="" disabled selected>Select Batch</option>
                     <?php if (isset($batches)): foreach ($batches as $batch): ?>
                         <option value="<?= $batch['id'] ?>"><?= htmlspecialchars($batch['name']) ?></option>
@@ -135,46 +167,36 @@
             </div>
             
             <div class="mb-4" id="section-container" style="display: none;">
-                <label for="section_id" class="form-label">Section</label>
-                <select class="form-select" id="section_id" name="section_id" disabled>
+                <label for="section_id" class="form-label fw-bold small">Section</label>
+                <select class="form-select border-0 bg-light" id="section_id" name="section_id" disabled>
                     <option value="" disabled selected>Select Section</option>
                 </select>
             </div>
             
-            <button type="submit" class="btn btn-primary w-100 mb-2">Sign Up</button>
-            <div class="text-center mt-3">
-                <small>Already registered? <a href="/login">Login here</a></small>
+            <button type="submit" class="btn btn-primary w-100 rounded-pill mb-3 py-2">Create Account</button>
+            <div class="text-center mt-2">
+                <p class="text-muted small">Already registered? <a href="/login" id="toLogin" class="text-primary fw-bold text-decoration-none transition-hover">Login Now</a></p>
             </div>
         </form>
     </div>
 
     <script>
-        // Pass sections data from PHP to JS
         const allSections = <?= json_encode($sections ?? []) ?>;
 
         document.getElementById('role').addEventListener('change', function() {
             const batchContainer = document.getElementById('batch-container');
             const sectionContainer = document.getElementById('section-container');
             const societyContainer = document.getElementById('society-container');
-            const batchSelect = document.getElementById('batch_id');
-            const sectionSelect = document.getElementById('section_id');
-            const societySelect = document.getElementById('society_id');
             
             batchContainer.style.display = 'none';
             sectionContainer.style.display = 'none';
             societyContainer.style.display = 'none';
-            batchSelect.required = false;
-            sectionSelect.required = false;
-            societySelect.required = false;
 
             if (this.value === 'cr' || this.value === 'gr') {
                 batchContainer.style.display = 'block';
                 sectionContainer.style.display = 'block';
-                batchSelect.required = true;
-                sectionSelect.required = true;
             } else if (this.value === 'president') {
                 societyContainer.style.display = 'block';
-                societySelect.required = true;
             }
         });
 
@@ -197,11 +219,12 @@
             }
         });
 
+        // Password strength and matching
         const password = document.getElementById('password');
         const confirm = document.getElementById('confirm_password');
-        const bar = document.getElementById('strength-bar');
-        const text = document.getElementById('strength-text');
         const matchText = document.getElementById('match-text');
+        const bar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
 
         password.addEventListener('input', function() {
             const val = this.value;
@@ -213,13 +236,13 @@
             bar.style.width = strength + '%';
             if (strength < 65) {
                 bar.className = 'progress-bar bg-danger';
-                text.textContent = 'Weak: Add letters and numbers';
+                strengthText.textContent = 'Weak: Add letters and numbers';
             } else if (strength < 100) {
                 bar.className = 'progress-bar bg-warning';
-                text.textContent = 'Medium: At least 8 characters';
+                strengthText.textContent = 'Medium: At least 8 characters';
             } else {
                 bar.className = 'progress-bar bg-success';
-                text.textContent = 'Strong password';
+                strengthText.textContent = 'Strong password';
             }
         });
 
@@ -233,20 +256,29 @@
             }
         });
 
+        // Toggle Password
         document.querySelectorAll('.toggle-password').forEach(btn => {
             btn.addEventListener('click', function() {
                 const input = this.parentElement.querySelector('input');
                 const icon = this.querySelector('i');
                 if (input.type === 'password') {
                     input.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
                 } else {
                     input.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
                 }
             });
+        });
+
+        // Animation transition to Login
+        document.getElementById('toLogin').addEventListener('click', function(e) {
+            e.preventDefault();
+            const card = document.getElementById('authCard');
+            card.classList.add('fade-out');
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 500);
         });
 
         // Uniqueness validation logic
@@ -297,5 +329,4 @@
         });
     </script>
 </body>
-
 </html>

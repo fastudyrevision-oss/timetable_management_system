@@ -118,6 +118,43 @@ class AdminController {
         }
     }
 
+    public function manageLeadership() {
+        $this->checkAdmin();
+        $leaders = $this->pdo->query("SELECT * FROM student_leadership")->fetchAll(\PDO::FETCH_ASSOC);
+        require '../src/Views/admin/leadership.php';
+    }
+
+    public function updateLeadership() {
+        $this->checkAdmin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $role = $_POST['role'];
+            $name = $_POST['name'];
+            $description = $_POST['description'];
+            $email = $_POST['email'];
+            $linkedin_url = $_POST['linkedin_url'] ?? null;
+
+            $picture = $this->handleUpload('picture', 'leadership');
+
+            $sql = "UPDATE student_leadership SET name = ?, description = ?, email = ?, linkedin_url = ?";
+            $params = [$name, $description, $email, $linkedin_url];
+
+            if ($picture) {
+                $sql .= ", picture = ?";
+                $params[] = $picture;
+            }
+
+            $sql .= " WHERE role = ?";
+            $params[] = $role;
+
+            $stmt = $this->pdo->prepare($sql);
+            if ($stmt->execute($params)) {
+                $this->logger->log('LEADER_UPDATE', "Updated student leader: $role ($name)", $_SESSION['user_id']);
+                header("Location: /admin/leadership?success=1");
+                exit;
+            }
+        }
+    }
+
     private function handleUpload($field, $folder) {
         if (isset($_FILES[$field]) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
             $tmp_name = $_FILES[$field]['tmp_name'];

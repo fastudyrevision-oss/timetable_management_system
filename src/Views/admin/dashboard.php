@@ -91,6 +91,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-person-lines-fill display-4 text-dark mb-3"></i>
+                        <h5 class="fw-bold">Leadership Control</h5>
+                        <p class="text-muted small">Update Head CR and GR profiles for the home page.</p>
+                        <a href="/admin/leadership" class="btn btn-dark rounded-pill px-4">Manage</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

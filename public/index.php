@@ -233,6 +233,12 @@ switch ($uri) {
     case '/admin/logs':
         $adminController->auditLogs();
         break;
+    case '/admin/leadership':
+        $adminController->manageLeadership();
+        break;
+    case '/admin/leadership/update':
+        $adminController->updateLeadership();
+        break;
 
     // Arrangement Routes
     case (preg_match('/^\/admin\/arrangement\/edit\/(\d+)$/', $uri, $matches) ? true : false):

@@ -6,8 +6,8 @@ require '../src/Views/layouts/header.php';
 <!-- Hero Section -->
 <div class="text-white text-center py-5 mb-0 rounded-bottom shadow-sm" style="background-color: #192f59;">
     <div class="container py-4">
-        <h1 class="display-4 fw-bold mb-3">Welcome to University Timetable</h1>
-        <p class="lead mb-4">Your central hub for academic schedules, faculty information, and institutional excellence.</p>
+        <h1 class="display-4 fw-bold mb-3"><span id="typewriter"></span><span class="type-cursor">|</span></h1>
+        <p class="lead mb-4 opacity-0" id="hero-subtext">Your central hub for academic schedules, faculty information, and institutional excellence.</p>
         <div class="d-flex justify-content-center gap-3">
             <a href="/timetable" class="btn btn-light btn-lg px-4 fw-bold text-primary shadow-sm hover-scale">View Timetable</a>
             <a href="/faculty" class="btn btn-outline-light btn-lg px-4 fw-bold hover-scale">Meet the Faculty</a>
@@ -243,6 +243,81 @@ require '../src/Views/layouts/header.php';
             </div>
         </div>
     </div>
+
+    <!-- Student Leadership Section -->
+    <?php
+    $leaders = $pdo->query("SELECT * FROM student_leadership")->fetchAll(PDO::FETCH_ASSOC);
+    $head_cr = null;
+    $gr = null;
+    foreach ($leaders as $l) {
+        if ($l['role'] === 'head_cr') $head_cr = $l;
+        if ($l['role'] === 'gr') $gr = $l;
+    }
+    ?>
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="display-6 fw-bold text-dark mb-3">Student Leadership</h2>
+            <div class="title-accent mx-auto mb-4"></div>
+            <p class="lead text-muted mx-auto" style="max-width: 800px;">Our dedicated student leaders play a vital role in bridging the gap between students and the department administration.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <!-- Head CR -->
+            <?php if ($head_cr): ?>
+            <div class="col-lg-4 col-md-6">
+                <div class="leader-card h-100 shadow-sm transition-hover border-0 bg-white">
+                    <div class="leader-header text-center pt-4">
+                        <div class="leader-img-wrapper">
+                            <img src="<?= htmlspecialchars($head_cr['picture'] ?: '/assets/images/head_cr_placeholder.png') ?>" alt="Head CR" class="img-fluid leader-img shadow-sm">
+                            <div class="leader-badge bg-primary text-white">
+                                <span class="small fw-bold">HEAD CR</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <h4 class="fw-bold text-dark mb-1"><?= htmlspecialchars($head_cr['name']) ?></h4>
+                        <p class="text-primary small fw-bold mb-3 text-uppercase">Head Class Representative</p>
+                        <p class="text-muted small mb-4"><?= htmlspecialchars($head_cr['description']) ?></p>
+                        <div class="leader-socials">
+                            <?php if ($head_cr['linkedin_url']): ?>
+                                <a href="<?= htmlspecialchars($head_cr['linkedin_url']) ?>" target="_blank" class="btn btn-outline-primary btn-sm rounded-circle me-2"><i class="bi bi-linkedin"></i></a>
+                            <?php endif; ?>
+                            <a href="mailto:<?= htmlspecialchars($head_cr['email']) ?>" class="btn btn-outline-primary btn-sm rounded-circle"><i class="bi bi-envelope-fill"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- GR -->
+            <?php if ($gr): ?>
+            <div class="col-lg-4 col-md-6">
+                <div class="leader-card h-100 shadow-sm transition-hover border-0 bg-white">
+                    <div class="leader-header text-center pt-4">
+                        <div class="leader-img-wrapper">
+                            <img src="<?= htmlspecialchars($gr['picture'] ?: '/assets/images/gr_placeholder.png') ?>" alt="GR" class="img-fluid leader-img shadow-sm">
+                            <div class="leader-badge bg-danger text-white">
+                                <span class="small fw-bold">HEAD GR</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <h4 class="fw-bold text-dark mb-1"><?= htmlspecialchars($gr['name']) ?></h4>
+                        <p class="text-danger small fw-bold mb-3 text-uppercase">Head Girls Representative</p>
+                        <p class="text-muted small mb-4"><?= htmlspecialchars($gr['description']) ?></p>
+                        <div class="leader-socials">
+                            <?php if ($gr['linkedin_url']): ?>
+                                <a href="<?= htmlspecialchars($gr['linkedin_url']) ?>" target="_blank" class="btn btn-outline-danger btn-sm rounded-circle me-2"><i class="bi bi-linkedin"></i></a>
+                            <?php endif; ?>
+                            <a href="mailto:<?= htmlspecialchars($gr['email']) ?>" class="btn btn-outline-danger btn-sm rounded-circle"><i class="bi bi-envelope-fill"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -278,6 +353,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.5 });
 
     counters.forEach(counter => observer.observe(counter));
+
+    // Typewriter Animation logic
+    const text = "Welcome to IT Department";
+    const typewriterElement = document.getElementById('typewriter');
+    const heroSubtext = document.getElementById('hero-subtext');
+    let i = 0;
+
+    function typeWriter() {
+        if (i < text.length) {
+            typewriterElement.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(typeWriter, 100);
+        } else {
+            // After heading is done, show the subtext with fade-in
+            heroSubtext.classList.add('fade-in-visible');
+            document.querySelector('.type-cursor').style.animation = 'none';
+            document.querySelector('.type-cursor').style.opacity = '0';
+        }
+    }
+
+    // Start typewriter slightly after load
+    setTimeout(typeWriter, 500);
 });
 </script>
 
@@ -420,6 +517,68 @@ document.addEventListener('DOMContentLoaded', () => {
 .fact-card:hover p,
 .fact-card:hover i {
     color: #dc3545 !important; /* Bootstrap red */
+}
+/* Leader Cards Styles */
+.leader-card {
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+}
+.leader-img-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.leader-img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #f8fafc;
+    transition: transform 0.3s ease;
+}
+.leader-card:hover .leader-img {
+    transform: scale(1.05);
+}
+.leader-badge {
+    position: absolute;
+    bottom: 5px;
+    right: 0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.leader-socials .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    line-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Typewriter & Hero Animations */
+#hero-subtext {
+    transition: opacity 1s ease-in-out, transform 1s ease-out;
+}
+.fade-in-visible {
+    opacity: 1 !important;
+    transform: translateY(0);
+}
+.opacity-0 {
+    opacity: 0;
+    transform: translateY(10px);
+}
+.type-cursor {
+    font-weight: 200;
+    color: var(--bs-light);
+    animation: blink 0.7s infinite;
+    margin-left: 5px;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 </style>
 
