@@ -92,8 +92,10 @@ class SocietyController {
                 'society_id' => $_SESSION['society_id'],
                 'title' => $_POST['title'],
                 'description' => $_POST['description'],
-                'event_date' => $_POST['event_date'],
-                'poster_path' => $this->handleUpload('poster', 'events')
+                'event_date' => !empty($_POST['hide_date']) ? null : $_POST['event_date'],
+                'poster_path' => $this->handleUpload('poster', 'events'),
+                'action_link' => $_POST['action_link'],
+                'action_label' => $_POST['action_label']
             ];
             $this->societyModel->addEvent($data);
             header("Location: /society/dashboard");
@@ -121,8 +123,10 @@ class SocietyController {
                 $data = [
                     'title' => $_POST['title'],
                     'description' => $_POST['description'],
-                    'event_date' => $_POST['event_date'],
-                    'poster_path' => $this->handleUpload('poster', 'events')
+                    'event_date' => !empty($_POST['hide_date']) ? null : $_POST['event_date'],
+                    'poster_path' => $this->handleUpload('poster', 'events'),
+                    'action_link' => $_POST['action_link'],
+                    'action_label' => $_POST['action_label']
                 ];
                 $this->societyModel->updateEvent($id, $data);
             }
@@ -148,7 +152,9 @@ class SocietyController {
                 'society_id' => $_SESSION['society_id'],
                 'title' => $_POST['title'],
                 'content' => $_POST['content'],
-                'image_path' => $this->handleUpload('news_image', 'news')
+                'image_path' => $this->handleUpload('news_image', 'news'),
+                'action_link' => $_POST['action_link'],
+                'action_label' => $_POST['action_label']
             ];
             $this->societyModel->addNews($data);
             header("Location: /society/dashboard");
@@ -176,7 +182,9 @@ class SocietyController {
                 $data = [
                     'title' => $_POST['title'],
                     'content' => $_POST['content'],
-                    'image_path' => $this->handleUpload('news_image', 'news')
+                    'image_path' => $this->handleUpload('news_image', 'news'),
+                    'action_link' => $_POST['action_link'],
+                    'action_label' => $_POST['action_label']
                 ];
                 $this->societyModel->updateNews($id, $data);
             }

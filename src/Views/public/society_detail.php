@@ -20,6 +20,15 @@ require '../src/Views/layouts/header.php';
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
+.event-card .img-wrapper {
+    overflow: hidden;
+}
+.event-poster {
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.event-card:hover .event-poster {
+    transform: scale(1.08);
+}
 </style>
 
 <div class="container">
@@ -35,18 +44,29 @@ require '../src/Views/layouts/header.php';
         <?php else: ?>
             <div class="col-md-8">
                 <?php foreach ($events as $event): ?>
-                    <div class="card mb-4 border-0 shadow-sm overflow-hidden">
+                    <div class="card mb-4 border-0 shadow-sm overflow-hidden event-card">
                         <div class="row g-0">
                             <?php if ($event['poster_path']): ?>
-                                <div class="col-md-4">
-                                    <img src="<?= htmlspecialchars($event['poster_path']) ?>" class="img-fluid h-100 object-fit-cover" alt="Event Poster">
+                                <div class="col-md-4 img-wrapper">
+                                    <img src="<?= htmlspecialchars($event['poster_path']) ?>" class="img-fluid event-poster" alt="Event Poster">
                                 </div>
                             <?php endif; ?>
                             <div class="col-md-<?= $event['poster_path'] ? '8' : '12' ?>">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold"><?= htmlspecialchars($event['title']) ?></h5>
                                     <p class="card-text text-muted"><?= nl2br(htmlspecialchars($event['description'])) ?></p>
-                                    <p class="card-text"><small class="text-primary fw-bold"><i class="bi bi-calendar-event me-2"></i><?= date('F j, Y - g:i A', strtotime($event['event_date'])) ?></small></p>
+                                    <p class="card-text mb-2">
+                                        <small class="text-primary fw-bold">
+                                            <i class="bi bi-calendar-event me-2"></i>
+                                            <?= $event['event_date'] ? date('F j, Y - g:i A', strtotime($event['event_date'])) : '<span class="badge bg-soft-primary text-primary border border-primary border-opacity-25 px-3">Coming Soon</span>' ?>
+                                        </small>
+                                    </p>
+                                    <?php if (!empty($event['action_link'])): ?>
+                                        <a href="<?= htmlspecialchars($event['action_link']) ?>" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3">
+                                            <i class="bi bi-link-45deg me-1"></i>
+                                            <?= htmlspecialchars($event['action_label'] ?: 'Register Now') ?>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -60,10 +80,18 @@ require '../src/Views/layouts/header.php';
                         <div class="card-body">
                             <h6 class="fw-bold mb-1"><?= htmlspecialchars($item['title']) ?></h6>
                             <?php if (!empty($item['image_path'])): ?>
-                                <img src="<?= htmlspecialchars($item['image_path']) ?>" class="img-fluid rounded mb-2 w-100" alt="News Image" style="max-height: 200px; object-fit: cover;">
+                                <img src="<?= htmlspecialchars($item['image_path']) ?>" class="img-fluid rounded mb-2 w-100" alt="News Image">
                             <?php endif; ?>
                             <p class="small text-muted mb-2"><?= nl2br(htmlspecialchars($item['content'])) ?></p>
-                            <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i><?= date('M d, Y', strtotime($item['created_at'])) ?></span>
+                            <?php if (!empty($item['action_link'])): ?>
+                                <a href="<?= htmlspecialchars($item['action_link']) ?>" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 mb-2">
+                                    <i class="bi bi-link-45deg me-1"></i>
+                                    <?= htmlspecialchars($item['action_label'] ?: 'More Info') ?>
+                                </a>
+                            <?php endif; ?>
+                            <div class="mt-1">
+                                <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i><?= date('M d, Y', strtotime($item['created_at'])) ?></span>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>

@@ -324,13 +324,25 @@
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" rows="3" required></textarea>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3" id="add_event_date_group">
                         <label class="form-label">Date & Time</label>
-                        <input type="datetime-local" name="event_date" class="form-control" required>
+                        <input type="datetime-local" name="event_date" id="add_event_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="hide_date" class="form-check-input" id="add_hide_date">
+                        <label class="form-check-label" for="add_hide_date">Mark as "Coming Soon" (Hide Date)</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Event Poster</label>
                         <input type="file" name="poster" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Action Link (URL - e.g. Registration Form)</label>
+                        <input type="url" name="action_link" class="form-control" placeholder="https://example.com/register">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link Label (e.g. Register Now)</label>
+                        <input type="text" name="action_label" class="form-control" placeholder="Register Now">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -360,6 +372,14 @@
                         <label class="form-label">Post Image (Optional)</label>
                         <input type="file" name="news_image" class="form-control" accept="image/*">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Action Link (URL - e.g. Registration Form)</label>
+                        <input type="url" name="action_link" class="form-control" placeholder="https://example.com/form">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link Label (e.g. Register Now)</label>
+                        <input type="text" name="action_label" class="form-control" placeholder="Register Now">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary px-4 rounded-pill">Post News</button>
@@ -386,13 +406,25 @@
                         <label class="form-label">Description</label>
                         <textarea name="description" id="edit_event_description" class="form-control" rows="3" required></textarea>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3" id="edit_event_date_group">
                         <label class="form-label">Date & Time</label>
                         <input type="datetime-local" name="event_date" id="edit_event_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="hide_date" class="form-check-input" id="edit_hide_date">
+                        <label class="form-check-label" for="edit_hide_date">Mark as "Coming Soon" (Hide Date)</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Update Poster (Optional)</label>
                         <input type="file" name="poster" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Action Link (URL)</label>
+                        <input type="url" name="action_link" id="edit_event_action_link" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link Label</label>
+                        <input type="text" name="action_label" id="edit_event_action_label" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -423,6 +455,14 @@
                     <div class="mb-3">
                         <label class="form-label">Update Image (Optional)</label>
                         <input type="file" name="news_image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Action Link (URL)</label>
+                        <input type="url" name="action_link" id="edit_news_action_link" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link Label</label>
+                        <input type="text" name="action_label" id="edit_news_action_label" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -555,7 +595,25 @@
                         document.getElementById('edit_event_id').value = data.id;
                         document.getElementById('edit_event_title').value = data.title;
                         document.getElementById('edit_event_description').value = data.description;
-                        document.getElementById('edit_event_date').value = data.event_date.replace(' ', 'T');
+                        
+                        const dateInput = document.getElementById('edit_event_date');
+                        const hideDateCheckbox = document.getElementById('edit_hide_date');
+                        const dateGroup = document.getElementById('edit_event_date_group');
+                        
+                        if (data.event_date) {
+                            dateInput.value = data.event_date.replace(' ', 'T');
+                            hideDateCheckbox.checked = false;
+                            dateInput.required = true;
+                            dateGroup.style.display = 'block';
+                        } else {
+                            dateInput.value = '';
+                            hideDateCheckbox.checked = true;
+                            dateInput.required = false;
+                            dateGroup.style.display = 'none';
+                        }
+
+                        document.getElementById('edit_event_action_link').value = data.action_link || '';
+                        document.getElementById('edit_event_action_label').value = data.action_label || '';
                         new bootstrap.Modal(document.getElementById('editEventModal')).show();
                     });
             });
@@ -570,6 +628,8 @@
                         document.getElementById('edit_news_id').value = data.id;
                         document.getElementById('edit_news_title').value = data.title;
                         document.getElementById('edit_news_content').value = data.content;
+                        document.getElementById('edit_news_action_link').value = data.action_link || '';
+                        document.getElementById('edit_news_action_label').value = data.action_label || '';
                         new bootstrap.Modal(document.getElementById('editNewsModal')).show();
                     });
             });
@@ -654,6 +714,27 @@
             croppedInput.value = canvas.toDataURL();
             wrapper.style.display = 'none';
         };
+
+        // Event Date Toggle
+        function setupDateToggle(checkboxId, inputId, groupId) {
+            const checkbox = document.getElementById(checkboxId);
+            const input = document.getElementById(inputId);
+            const group = document.getElementById(groupId);
+            
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    input.required = false;
+                    group.style.display = 'none';
+                    input.value = '';
+                } else {
+                    input.required = true;
+                    group.style.display = 'block';
+                }
+            });
+        }
+
+        setupDateToggle('add_hide_date', 'add_event_date', 'add_event_date_group');
+        setupDateToggle('edit_hide_date', 'edit_event_date', 'edit_event_date_group');
     </script>
 </body>
 </html>

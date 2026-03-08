@@ -104,13 +104,15 @@ class Society {
     }
 
     public function addEvent($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO society_events (society_id, title, description, event_date, poster_path) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO society_events (society_id, title, description, event_date, poster_path, action_link, action_label) VALUES (?, ?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             $data['society_id'],
             $data['title'],
             $data['description'],
             $data['event_date'],
-            $data['poster_path'] ?? null
+            $data['poster_path'] ?? null,
+            $data['action_link'] ?? null,
+            $data['action_label'] ?? null
         ]);
     }
 
@@ -122,11 +124,11 @@ class Society {
 
     public function updateEvent($id, $data) {
         if (!empty($data['poster_path'])) {
-            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ?, poster_path = ? WHERE id = ?");
-            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $data['poster_path'], $id]);
+            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ?, poster_path = ?, action_link = ?, action_label = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $data['poster_path'], $data['action_link'], $data['action_label'], $id]);
         } else {
-            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ? WHERE id = ?");
-            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $id]);
+            $stmt = $this->pdo->prepare("UPDATE society_events SET title = ?, description = ?, event_date = ?, action_link = ?, action_label = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['description'], $data['event_date'], $data['action_link'], $data['action_label'], $id]);
         }
     }
 
@@ -136,12 +138,14 @@ class Society {
     }
 
     public function addNews($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO society_news (society_id, title, content, image_path) VALUES (?, ?, ?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO society_news (society_id, title, content, image_path, action_link, action_label) VALUES (?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             $data['society_id'],
             $data['title'],
             $data['content'],
-            $data['image_path'] ?? null
+            $data['image_path'] ?? null,
+            $data['action_link'] ?? null,
+            $data['action_label'] ?? null
         ]);
     }
 
@@ -153,11 +157,11 @@ class Society {
 
     public function updateNews($id, $data) {
         if (!empty($data['image_path'])) {
-            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ?, image_path = ? WHERE id = ?");
-            return $stmt->execute([$data['title'], $data['content'], $data['image_path'], $id]);
+            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ?, image_path = ?, action_link = ?, action_label = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['content'], $data['image_path'], $data['action_link'], $data['action_label'], $id]);
         } else {
-            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ? WHERE id = ?");
-            return $stmt->execute([$data['title'], $data['content'], $id]);
+            $stmt = $this->pdo->prepare("UPDATE society_news SET title = ?, content = ?, action_link = ?, action_label = ? WHERE id = ?");
+            return $stmt->execute([$data['title'], $data['content'], $data['action_link'], $data['action_label'], $id]);
         }
     }
 
