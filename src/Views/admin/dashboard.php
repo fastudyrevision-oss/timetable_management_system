@@ -102,6 +102,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-images display-4 text-primary mb-3"></i>
+                        <h5 class="fw-bold">Gallery Control</h5>
+                        <p class="text-muted small">Upload and manage department event photos and videos.</p>
+                        <a href="/admin/gallery" class="btn btn-primary rounded-pill px-4">Manage</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

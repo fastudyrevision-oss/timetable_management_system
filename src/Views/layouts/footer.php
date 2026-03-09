@@ -31,6 +31,8 @@
                     <li class="mb-2"><a href="/academic-calendar" class="text-white-50 text-decoration-none hover-white">Academic Calendar</a></li>
                     <li class="mb-2"><a href="/faculty" class="text-white-50 text-decoration-none hover-white">Faculty</a></li>
                     <li class="mb-2"><a href="/societies" class="text-white-50 text-decoration-none hover-white">Societies</a></li>
+                    <li class="mb-2"><a href="/gallery" class="text-white-50 text-decoration-none hover-white">Gallery</a></li>
+                    <li class="mb-2"><a href="/cgpa-calculator" class="text-white-50 text-decoration-none hover-white">CGPA Calculator</a></li>
                 </ul>
             </div>
 

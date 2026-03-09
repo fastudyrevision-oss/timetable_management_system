@@ -95,3 +95,11 @@
     color: #192f59 !important;
     font-weight: 700 !important;
 }
+
+/* Dropdown on Hover */
+@media (min-width: 992px) {
+    .nav-item.dropdown:hover>.dropdown-menu {
+        display: block !important;
+        margin-top: 0;
+    }
+}

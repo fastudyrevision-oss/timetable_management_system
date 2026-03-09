@@ -43,15 +43,28 @@
                             <i class="bi bi-house-door me-1"></i>Home
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-hover <?= ($current_uri == '/timetable') ? 'active-nav' : '' ?>" href="/timetable">
-                            <i class="bi bi-calendar3 me-1"></i>Timetable
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle nav-hover <?= (in_array($current_uri, ['/timetable', '/academic-calendar', '/cgpa-calculator'])) ? 'active-nav' : '' ?>" href="#" id="navbarDropdownAcademics" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-mortarboard me-1"></i>Academics
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-hover <?= ($current_uri == '/academic-calendar') ? 'active-nav' : '' ?>" href="/academic-calendar">
-                            <i class="bi bi-calendar-check me-1"></i>Academic Calendar
-                        </a>
+                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="navbarDropdownAcademics">
+                            <li>
+                                <a class="dropdown-item <?= ($current_uri == '/timetable') ? 'active' : '' ?>" href="/timetable">
+                                    <i class="bi bi-calendar3 me-2"></i>Timetable
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item <?= ($current_uri == '/academic-calendar') ? 'active' : '' ?>" href="/academic-calendar">
+                                    <i class="bi bi-calendar-check me-2"></i>Academic Calendar
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item <?= ($current_uri == '/cgpa-calculator') ? 'active' : '' ?>" href="/cgpa-calculator">
+                                    <i class="bi bi-calculator me-2"></i>CGPA Calculator
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link nav-hover <?= ($current_uri == '/faculty') ? 'active-nav' : '' ?>" href="/faculty">
@@ -61,6 +74,11 @@
                     <li class="nav-item">
                         <a class="nav-link nav-hover <?= ($current_uri == '/societies') ? 'active-nav' : '' ?>" href="/societies">
                             <i class="bi bi-mortarboard me-1"></i>Societies
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover <?= ($current_uri == '/gallery') ? 'active-nav' : '' ?>" href="/gallery">
+                            <i class="bi bi-images me-1"></i>Gallery
                         </a>
                     </li>
                 </ul>

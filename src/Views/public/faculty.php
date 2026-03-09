@@ -115,6 +115,7 @@ require '../src/Views/layouts/header.php';
     transform: translateY(-8px);
     box-shadow: var(--card-shadow-hover);
     border-color: var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.0);
 }
 
 .top-official {
@@ -195,7 +196,8 @@ require '../src/Views/layouts/header.php';
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(30, 58, 138, 0.96); /* Darker blue for better contrast */
+    background: rgba(30, 58, 138, 0.75); /* More transparent background */
+    backdrop-filter: blur(8px); /* Add glassmorphism effect */
     color: #fff;
     padding: 1.5rem;
     display: flex;

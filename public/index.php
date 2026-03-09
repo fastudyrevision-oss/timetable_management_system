@@ -38,6 +38,9 @@ switch ($uri) {
     case '/academic-calendar':
         require '../src/Views/public/academic_calendar.php';
         break;
+    case '/cgpa-calculator':
+        require '../src/Views/public/cgpa_calculator.php';
+        break;
     case '/timetable':
         $timetableController->publicIndex();
         break;
@@ -46,6 +49,9 @@ switch ($uri) {
         break;
     case '/societies':
         $societyController->publicIndex();
+        break;
+    case '/gallery':
+        require '../src/Views/public/gallery.php';
         break;
     case (preg_match('/^\/society\/(\d+)$/', $uri, $matches) ? true : false):
         $societyController->publicView($matches[1]);
@@ -238,6 +244,21 @@ switch ($uri) {
         break;
     case '/admin/leadership/update':
         $adminController->updateLeadership();
+        break;
+    case '/admin/gallery':
+        $adminController->manageGallery();
+        break;
+    case '/admin/gallery/add':
+        $adminController->addGalleryItem();
+        break;
+    case '/admin/gallery/update-order':
+        $adminController->updateGalleryOrder();
+        break;
+    case '/admin/gallery/update':
+        $adminController->updateGalleryItem();
+        break;
+    case (preg_match('/^\/admin\/gallery\/delete\/(\d+)$/', $uri, $matches) ? true : false):
+        $adminController->deleteGalleryItem($matches[1]);
         break;
 
     // Arrangement Routes
